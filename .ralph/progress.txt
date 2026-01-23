@@ -574,3 +574,45 @@
 - Commit the formula command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 14 - 2026-01-23
+
+### Task: Implement which-formula command (cmd-031)
+
+**Completed:**
+- Researched brew which-formula behavior (finds which formula provides a command)
+- Created src/commands/which_formula.rs with executables database lookup
+- Implemented executables database loading from ${HOMEBREW_CACHE}/api/internal/executables.txt
+- Implemented database parsing (format: formula(version):executable1 executable2 ...)
+- Implemented --explain flag to show installation instructions
+- Implemented --skip-update flag (accepted but not used, database already cached)
+- Added proper error handling for missing database
+- Silently skips commands not in database (matches brew behavior)
+
+**Key Decisions:**
+- Database location: ${HOMEBREW_CACHE}/api/internal/executables.txt
+- Database format: each line is "formula(version):executable1 executable2 ..."
+- Extract formula name by removing version in parentheses
+- Build HashMap for O(1) lookup of command → formula
+- When --explain is used, output installation instructions
+- Commands not in database are silently ignored (no output, no error)
+- Multiple commands can be checked in single invocation
+
+**Testing:**
+- ✅ `brew-rust which-formula git` matches `brew which-formula git`
+- ✅ `brew-rust which-formula wget` matches brew output
+- ✅ `brew-rust which-formula --explain rustup` matches brew exactly
+- ✅ `brew-rust which-formula git wget rustup` matches brew (multiple commands)
+- ✅ Non-existent commands silently ignored (matches brew)
+- ✅ No arguments shows usage and exits with code 1
+
+**Files Changed:**
+- src/commands/which_formula.rs (created)
+- src/commands/mod.rs (added which_formula module)
+- src/main.rs (added which-formula dispatch)
+- .ralph/prd.json (marked cmd-031 as passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the which-formula command implementation
+- Choose next highest priority unimplemented command
+

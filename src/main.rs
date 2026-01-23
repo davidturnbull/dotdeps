@@ -130,6 +130,10 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "log" => commands::log::LogCommand::new().run(args),
         "missing" => commands::missing::execute(args),
         "options" => commands::options::run(args).map_err(|e| e.into()),
+        "which-formula" => {
+            commands::which_formula::execute(args);
+            Ok(())
+        }
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

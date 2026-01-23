@@ -457,7 +457,7 @@
         "Add to dispatch in main.rs",
         "Test against real brew which-formula"
       ],
-      "passes": false,
+      "passes": true,
       "completed": true
     },
     {

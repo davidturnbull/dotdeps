@@ -46,6 +46,7 @@ pub mod update;
 pub mod upgrade;
 pub mod uses;
 pub mod version;
+pub mod which_formula;
 
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;
 

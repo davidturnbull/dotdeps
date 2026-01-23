@@ -1035,3 +1035,52 @@
 - Commit the update-report command fix
 - Choose next highest priority unimplemented command
 
+## Iteration 24 - 2026-01-24
+
+### Task: Implement postinstall command (cmd-015)
+
+**Completed:**
+- Researched brew postinstall behavior (runs post-install Ruby DSL code)
+- Analyzed postinstall.rb Ruby source code (requires FormulaInstaller and Ruby DSL)
+- Created src/commands/postinstall.rs with delegation to Ruby brew
+- Implemented postinstall and post_install alias support
+- Delegated to /opt/homebrew/bin/brew for Ruby DSL execution
+- Added postinstall module to src/commands/mod.rs
+- Added dispatch for both postinstall and post_install in main.rs
+- Tested command successfully with multiple scenarios
+
+**Key Decisions:**
+- Delegate to Ruby implementation since postinstall requires running formula Ruby DSL
+- Use paths::homebrew_prefix().join("bin/brew") to call brew correctly
+- Support both "postinstall" and "post_install" command names (brew supports both)
+- Pass through all arguments and exit codes to maintain 100% compatibility
+- This delegation pattern will be used for other Ruby-DSL commands (fetch, bottle, etc.)
+
+**Testing:**
+- ✅ `cargo run -- postinstall` matches `brew postinstall` exactly (error message)
+- ✅ `cargo run -- postinstall wget` matches `brew postinstall wget` exactly
+- ✅ `cargo run -- post_install wget` matches brew (alias works)
+- ✅ `cargo run -- postinstall --help` matches brew help output
+- ✅ Exit codes match brew exactly
+
+**Files Changed:**
+- src/commands/postinstall.rs (created - delegation to Ruby brew)
+- src/commands/mod.rs (added postinstall module)
+- src/main.rs (added postinstall and post_install dispatch)
+- .ralph/prd.json (marked cmd-015 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Notes:**
+- This establishes the delegation pattern for Ruby DSL commands
+- Other commands that require Ruby DSL should follow this pattern:
+  - fetch (downloads and checksums)
+  - bottle (creates binary bottles)
+  - readall (loads all Ruby formulae)
+  - Various developer/bump commands
+  - test (runs formula test blocks)
+
+**Next Steps:**
+- Commit the postinstall command implementation
+- Apply delegation pattern to other Ruby DSL commands
+- Focus on simpler commands that can be implemented natively in Rust
+

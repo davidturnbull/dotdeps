@@ -33,6 +33,7 @@ pub mod nodenv_sync;
 pub mod options;
 pub mod outdated;
 pub mod pin;
+pub mod postinstall;
 pub mod prefix;
 pub mod pyenv_sync;
 pub mod rbenv_sync;

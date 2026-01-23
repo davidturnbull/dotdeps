@@ -106,6 +106,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "upgrade" => commands::upgrade::run(args).map_err(|e| e.into()),
         "pin" => commands::pin::run(args),
         "unpin" => commands::unpin::run(args),
+        "postinstall" | "post_install" => commands::postinstall::run(args),
         "cleanup" => commands::cleanup::run(args),
         "doctor" => commands::doctor::DoctorCommand.run(args),
         "docs" => commands::docs::execute(args),

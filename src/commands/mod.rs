@@ -25,6 +25,7 @@ pub mod link;
 pub mod list;
 pub mod list_commands;
 pub mod log;
+pub mod missing;
 pub mod options;
 pub mod outdated;
 pub mod pin;

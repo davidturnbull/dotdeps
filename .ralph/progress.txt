@@ -450,3 +450,44 @@
 - Commit the completions command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 11 - 2026-01-23
+
+### Task: Implement missing command (cmd-013)
+
+**Completed:**
+- Researched brew missing behavior (checks for missing runtime dependencies)
+- Created src/commands/missing.rs with full dependency checking
+- Implemented --hide flag to treat specified formulae as uninstalled
+- Implemented check for all installed formulae when no args provided
+- Implemented runtime_dependencies extraction from API cache and tab files
+- Added fallback to dependencies field when runtime_dependencies not available
+- Implemented proper exit code (1) when missing dependencies found
+- Added support for checking specific formulae vs all installed
+
+**Key Decisions:**
+- Use FormulaInfo.installed[0].runtime_dependencies as primary source
+- Fall back to FormulaInfo.dependencies when runtime_dependencies is empty
+- Check opt symlinks to determine if dependencies are installed
+- --hide flag causes dependencies to be reported as missing even if installed
+- Exit with code 1 if any missing dependencies found (matches brew)
+- Show formula name prefix only when checking multiple formulae
+
+**Testing:**
+- ✅ `brew-rust missing` matches `brew missing` (no output when all deps present)
+- ✅ `brew-rust missing wget` matches `brew missing wget`
+- ✅ `brew-rust missing --hide=openssl@3 wget` matches brew output exactly
+- ✅ `brew-rust missing --hide=openssl@3,ca-certificates wget` matches brew
+- ✅ Exit code 1 when dependencies missing, 0 when all present
+- ✅ Multiple formulae display correctly with formula name prefix
+
+**Files Changed:**
+- src/commands/missing.rs (created)
+- src/commands/mod.rs (added missing module)
+- src/main.rs (added missing dispatch)
+- .ralph/prd.json (marked cmd-013 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the missing command implementation
+- Choose next highest priority unimplemented command
+

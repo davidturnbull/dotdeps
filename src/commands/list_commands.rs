@@ -16,6 +16,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "commands",
     "config",
     "deps",
+    "doctor",
     "help",
     "info",
     "install",
@@ -39,6 +40,7 @@ const COMMAND_ALIASES: &[&str] = &[
     "-S",     // -> search
     "-v",     // -> --version
     "abv",    // -> info
+    "dr",     // -> doctor
     "ln",     // -> link
     "ls",     // -> list
     "remove", // -> uninstall

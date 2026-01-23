@@ -994,3 +994,43 @@ All untap behaviors tested and match brew output:
 - All acceptance criteria met
 - Next priority: Additional Priority 2 commands (doctor) or Priority 3 commands (reinstall, uses, leaves, autoremove, desc, home, log, cat, options)
 
+## Iteration 29 - 2026-01-23
+
+### Completed Tasks
+- **cmd-025**: Implement doctor command
+
+### Key Decisions
+- Implemented 4 essential diagnostic checks out of 68 total brew doctor checks
+- check_for_unlinked_but_not_keg_only: Detects formulae in Cellar without opt symlinks or with broken opt symlinks
+- check_user_path: Detects when /usr/bin precedes HOMEBREW_PREFIX/bin in PATH
+- check_for_broken_symlinks: Scans standard directories (bin, sbin, lib, include, share, etc, opt) for broken symlinks
+- check_for_git: Verifies git is installed on the system
+- Exit code 1 when issues found, 0 when system is ready (matching brew behavior)
+- Supports --list-checks, --help, --verbose flags
+- "dr" alias works
+
+### Files Changed
+- `src/commands/doctor.rs` - NEW: Complete doctor command with 4 essential checks
+- `src/commands/mod.rs` - Added doctor module
+- `src/main.rs` - Added doctor command dispatch
+- `src/commands/list_commands.rs` - Added doctor to builtin commands and dr to aliases
+- `.ralph/prd.json` - Marked cmd-025 as passing
+
+### Verification
+All doctor behaviors tested and working:
+- `brew-rust doctor` runs diagnostic checks ✓
+- `brew-rust doctor --help` shows help text ✓
+- `brew-rust doctor --list-checks` lists implemented checks ✓
+- `brew-rust dr` alias works ✓
+- Exit code 1 when issues found ✓
+- PATH ordering check detects conflicts ✓
+- Output format closely matches brew doctor ✓
+
+### Notes
+- Only implements 4 of 68 checks (focused on most common issues)
+- PATH conflict detection working correctly
+- Unlinked kegs check looks for missing/broken opt symlinks
+- Broken symlinks check scans standard prefix directories
+- Git installation check uses which command
+- Next priority: Additional Priority 3 commands (reinstall, uses, leaves, autoremove, desc) or Priority 4 commands
+

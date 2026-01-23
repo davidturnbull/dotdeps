@@ -585,7 +585,8 @@
         "`brew-rust doctor` runs diagnostic checks",
         "Reports issues with clear messages"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Implements essential checks: unlinked kegs, PATH ordering, broken symlinks, git installation. Does not implement all 68 checks from brew doctor, but covers the most common issues."
     },
     {
       "id": "cmd-026",

@@ -670,7 +670,8 @@
       "acceptance": [
         "`brew-rust desc wget` shows wget description"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full desc command implementation with name lookup and search modes. Supports --search, --name, --description flags for searching both names and descriptions. Regex search with /pattern/ syntax. Output format matches brew exactly (empty sections shown with headers even when no results)."
     },
     {
       "id": "cmd-031",

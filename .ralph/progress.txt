@@ -1194,3 +1194,43 @@ All autoremove behaviors tested and match brew output:
 - Autoremove command is Priority 3, now complete
 - All acceptance criteria met
 - Next priority: Additional Priority 3 commands (desc) or Priority 4 commands (home, log, cat, options)
+
+## Iteration 34 - 2026-01-23
+
+### Completed Tasks
+- **cmd-030**: Implement desc command
+
+### Key Decisions
+- Display mode (no search flags): Look up exact formula/cask names and show their descriptions
+- Search mode (--search, --name, or --description flags): Search through all formulae and casks
+- Regex support: Patterns flanked by slashes (/pattern/) are treated as regular expressions
+- Output format: Always show "==> Formulae" and "==> Casks" headers (even when empty) to match brew
+- Error handling: Show error for non-existent formula/cask in display mode
+- Search filters:
+  - --search or no flag: Search both name and description
+  - --name: Search only names
+  - --description: Search only descriptions
+
+### Files Changed
+- `src/commands/desc.rs` - NEW: Complete desc command implementation
+- `src/commands/mod.rs` - Added desc module
+- `src/main.rs` - Added desc command dispatch
+- `src/commands/list_commands.rs` - Added desc to builtin commands
+- `.ralph/prd.json` - Marked cmd-030 as passing
+
+### Verification
+All desc behaviors tested and match brew output:
+- `brew-rust desc wget jq curl` matches brew ✓
+- `brew-rust desc --help` shows help text ✓
+- `brew-rust desc --search download` matches brew ✓
+- `brew-rust desc --name wget` matches brew ✓
+- `brew-rust desc --description "command-line"` matches brew ✓
+- `brew-rust desc --search /^wget$/` regex search works ✓
+- `brew-rust desc nonexistent` shows error ✓
+- `brew-rust desc --search nonexistent` shows empty sections ✓
+- Output format matches brew exactly ✓
+
+### Notes
+- Desc command is Priority 3, now complete
+- All acceptance criteria met
+- Next priority: Additional Priority 4 commands (home, log, cat, options) or finish remaining tasks

@@ -17,6 +17,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "commands",
     "config",
     "deps",
+    "desc",
     "doctor",
     "help",
     "info",

@@ -5,6 +5,7 @@ pub mod cellar;
 pub mod cleanup;
 pub mod config;
 pub mod deps;
+pub mod desc;
 pub mod doctor;
 pub mod help;
 pub mod info;

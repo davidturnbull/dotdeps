@@ -502,3 +502,37 @@ Installation infrastructure tested successfully:
 - This matches actual Homebrew which uses gh CLI credentials or HOMEBREW_GITHUB_API_TOKEN
 - Installation infrastructure is complete and ready for install command
 - Next priority: arch-007 (Dependency resolution) then cmd-012 (install command)
+
+## Iteration 16 - 2026-01-23
+
+### Completed Tasks
+- **arch-007**: Dependency resolution
+
+### Key Decisions
+- Created comprehensive DependencyGraph struct for managing dependency relationships
+- Implemented recursive graph building using formula API cache
+- Cycle detection using depth-first search with recursion stack tracking
+- Topological sort using Kahn's algorithm (in-degree based BFS)
+- Separate handling for runtime vs build dependencies (include_build flag)
+- Build and test dependencies excluded from default dependency resolution (matching Homebrew)
+- Returns dependencies in reverse topological order (dependencies come first)
+
+### Files Changed
+- `src/deps.rs` - NEW: Complete dependency resolution module with graph building, cycle detection, and topological sort
+- `src/lib.rs` - Added deps module export
+- `examples/test_deps.rs` - NEW: Test program for dependency resolution
+
+### Verification
+All dependency resolution features tested and verified:
+- `wget` dependencies: libunistring, ca-certificates, gettext, openssl@3, libidn2 ✓
+- `curl` dependencies: All 11 dependencies correctly identified ✓
+- Topological sort order correct (dependencies before dependents) ✓
+- Build dependencies handled separately with include_build flag ✓
+- Unit tests all passing (empty graph, simple chain, diamond dependency, cycle detection) ✓
+- Dependency graph matches `brew deps` output exactly ✓
+
+### Notes
+- Dependency resolution is complete and ready for install command
+- Cycle detection protects against circular dependency issues
+- Topological sort ensures correct installation order
+- Next priority: cmd-012 (install command) using dependency resolution

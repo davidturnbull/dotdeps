@@ -317,7 +317,8 @@
         "Install order respects dependency graph",
         "Circular dependencies are detected"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Complete dependency resolution with graph building, cycle detection, and topological sort. Uses Kahn's algorithm for topological sorting. Build/test dependencies handled separately from runtime dependencies."
     },
     {
       "id": "cmd-012",

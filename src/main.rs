@@ -143,6 +143,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "bump-formula-pr" => commands::bump_formula_pr::execute(args),
         "bump-revision" => commands::bump_revision::execute(args),
         "bump-unversioned-casks" => commands::bump_unversioned_casks::execute(args),
+        "bundle" => commands::bundle::execute(args),
         "contributions" => commands::contributions::execute(args),
         "create" => commands::create::execute(args),
         "debugger" => commands::debugger::execute(args),
@@ -157,6 +158,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
             Ok(())
         }
         "formulae" => commands::formulae::execute(args),
+        "gist-logs" => commands::gist_logs::execute(args),
         "generate-analytics-api" => commands::generate_analytics_api::execute(args),
         "generate-cask-api" => commands::generate_cask_api::execute(args),
         "generate-cask-ci-matrix" => commands::generate_cask_ci_matrix::execute(args),
@@ -170,6 +172,8 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "linkage" => commands::linkage::execute(args),
         "livecheck" => commands::livecheck::execute(args),
         "log" => commands::log::LogCommand::new().run(args),
+        "mcp-server" => commands::mcp_server::execute(args),
+        "migrate" => commands::migrate::execute(args),
         "missing" => commands::missing::execute(args),
         "nodenv-sync" => commands::nodenv_sync::execute(args),
         "options" => commands::options::run(args).map_err(|e| e.into()),
@@ -183,6 +187,8 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "release" => commands::release::execute(args),
         "rubocop" => commands::rubocop::execute(args),
         "rubydoc" => commands::rubydoc::execute(args),
+        "services" => commands::services::execute(args),
+        "setup-ruby" => commands::setup_ruby::execute(args),
         "tap-new" => commands::tap_new::execute(args),
         "test-bot" => commands::test_bot::execute(args),
         "test" => commands::test::execute(args),
@@ -197,7 +203,9 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "update-sponsors" => commands::update_sponsors::execute(args),
         "update-test" => commands::update_test::execute(args),
         "vendor-gems" => commands::vendor_gems::execute(args),
+        "vendor-install" => commands::vendor_install::execute(args),
         "verify" => commands::verify::execute(args),
+        "version-install" => commands::version_install::execute(args),
         "which-formula" => {
             commands::which_formula::execute(args);
             Ok(())

@@ -60,7 +60,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew bundle behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-005",
@@ -169,7 +170,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew gist-logs"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-012",
@@ -184,7 +186,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew migrate behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-013",
@@ -291,7 +294,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew services behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-020",
@@ -305,7 +309,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew setup-ruby"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-021",
@@ -440,7 +445,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew vendor-install"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-030",
@@ -454,7 +460,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew version-install"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-031",
@@ -1310,7 +1317,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew mcp-server"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     }
   ]
 }

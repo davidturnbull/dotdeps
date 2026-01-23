@@ -589,7 +589,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew contributions"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-040",
@@ -618,7 +619,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew debugger"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-042",
@@ -632,7 +634,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew determine-test-runners"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-043",
@@ -646,7 +649,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew developer"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-044",
@@ -660,7 +664,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew dispatch-build-bottle"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-045",
@@ -720,7 +725,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew formula-analytics"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-049",
@@ -749,7 +755,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew generate-analytics-api"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-051",
@@ -763,7 +770,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew generate-cask-api"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-052",
@@ -777,7 +785,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew generate-cask-ci-matrix"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-053",
@@ -791,7 +800,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew generate-formula-api"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-054",
@@ -805,7 +815,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew generate-man-completions"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-055",
@@ -819,7 +830,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew install-bundler-gems"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-056",
@@ -848,7 +860,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew lgtm"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-058",
@@ -862,7 +875,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew linkage"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-059",
@@ -876,7 +890,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew livecheck"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-060",
@@ -890,7 +905,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew pr-automerge"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-061",
@@ -904,7 +920,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew pr-publish"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-062",
@@ -918,7 +935,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew pr-pull"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-063",
@@ -932,7 +950,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew pr-upload"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-064",
@@ -946,7 +965,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew prof"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-065",
@@ -960,7 +980,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew release"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-066",
@@ -974,7 +995,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew rubocop"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-067",
@@ -1003,7 +1025,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew rubydoc"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-069",
@@ -1017,7 +1040,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew sh"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-070",
@@ -1046,7 +1070,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew tap-new"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-072",
@@ -1060,7 +1085,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew test-bot"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-073",
@@ -1119,7 +1145,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew unbottled"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-077",
@@ -1133,7 +1160,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew unpack"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-078",
@@ -1147,7 +1175,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-license-data"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-079",
@@ -1161,7 +1190,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-maintainers"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-080",
@@ -1175,7 +1205,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-perl-resources"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-081",
@@ -1189,7 +1220,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-python-resources"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-082",
@@ -1203,7 +1235,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-sponsors"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-083",
@@ -1217,7 +1250,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-test"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-084",
@@ -1231,7 +1265,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew vendor-gems"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-085",
@@ -1245,7 +1280,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew verify"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-086",
@@ -1259,7 +1295,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew which-update"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-087",

@@ -552,7 +552,7 @@ All dependency resolution features tested and verified:
 - Creates opt symlinks and writes Tab metadata for each installation
 - Shows summary of what will be installed before starting
 - Supports --force (reinstall), --verbose (detailed output), --ignore-dependencies flags
-- --build-from-source flag parsed but not implemented (always uses bottles)
+- --build-from-source flag parsed but not implemented (bottles always used)
 
 ### Files Changed
 - `src/commands/install.rs` - NEW: Complete install command implementation
@@ -769,3 +769,42 @@ All outdated behaviors tested and match brew output:
 - Cask support not yet implemented (--cask flag parsed but ignored)
 - Next priority: Additional high-priority commands (update, upgrade, cleanup, tap, untap, doctor, pin/unpin)
 
+## Iteration 23 - 2026-01-23
+
+### Completed Tasks
+- **cmd-017**: Implement update command
+
+### Key Decisions
+- Update command fetches latest changes from git repositories and refreshes API cache
+- Updates Homebrew repository itself (git fetch + rebase/merge)
+- Updates all taps in Library/Taps directory (git fetch + rebase/merge)
+- Downloads fresh API cache files (formula.jws.json, cask.jws.json, *_tap_migrations.jws.json)
+- Supports --verbose (shows git operations), --quiet (silent), --force (skip update check), --merge (use merge instead of rebase)
+- Shows summary of updated repositories
+- Checks for outdated formulae after update and displays count
+- Update marker file prevents too-frequent updates (5 minute threshold)
+- All flags parsed; --auto-update noted but not specially handled yet
+
+### Files Changed
+- `src/commands/update.rs` - NEW: Complete update command implementation
+- `src/commands/mod.rs` - Added update module
+- `src/main.rs` - Added update command dispatch
+- `src/commands/list_commands.rs` - Added update to builtin commands and "up" to aliases
+- `.ralph/prd.json` - Marked cmd-017 as passing
+
+### Verification
+All update behaviors tested and match brew output:
+- `brew-rust update` updates git repos and API cache ✓
+- `brew-rust update --verbose` shows git operations ✓
+- `brew-rust update --quiet` runs silently ✓
+- `brew-rust up` alias works ✓
+- `brew-rust update --help` shows help text ✓
+- API cache files refreshed (formula.jws.json, cask.jws.json) ✓
+- Summary shows updated taps and outdated formula count ✓
+- Output format closely matches brew ✓
+
+### Notes
+- Uses git fetch + rebase (or merge with --merge flag) for all git repos
+- Downloads API cache files with curl to match Homebrew behavior
+- Update marker prevents updates more often than every 5 minutes (unless --force)
+- Next priority: cmd-018 (upgrade command) - the other priority 1 task

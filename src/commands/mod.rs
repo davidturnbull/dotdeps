@@ -16,6 +16,7 @@ pub mod search;
 pub mod taps;
 pub mod uninstall;
 pub mod unlink;
+pub mod update;
 pub mod version;
 
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;

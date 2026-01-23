@@ -433,7 +433,8 @@
         "API cache is refreshed",
         "Shows summary of new/updated formulae"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full update command implementation with git repo updates and API cache refresh. Supports --verbose, --quiet, --force, --merge, --auto-update flags. Uses git fetch + rebase (or merge) for all taps. Downloads API cache files with curl. Shows summary of updated taps and outdated formulae."
     },
     {
       "id": "cmd-018",

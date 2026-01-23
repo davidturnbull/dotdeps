@@ -536,3 +536,44 @@ All dependency resolution features tested and verified:
 - Cycle detection protects against circular dependency issues
 - Topological sort ensures correct installation order
 - Next priority: cmd-012 (install command) using dependency resolution
+
+## Iteration 17 - 2026-01-23
+
+### Completed Tasks
+- **cmd-012**: Implement install command
+
+### Key Decisions
+- Install command integrates all architectural pieces: dependency resolution, download infrastructure, installation infrastructure
+- Uses DependencyGraph to resolve all dependencies and get topological sort order
+- Detects already-installed formulae by checking opt symlink existence (not API cache, which doesn't update immediately)
+- Downloads bottles with progress bars, uses cached bottles when available
+- Constructs bottle filename from formula name, version, tag, and rebuild number (matching cache.rs logic)
+- Installs in dependency order (dependencies before dependents)
+- Creates opt symlinks and writes Tab metadata for each installation
+- Shows summary of what will be installed before starting
+- Supports --force (reinstall), --verbose (detailed output), --ignore-dependencies flags
+- --build-from-source flag parsed but not implemented (always uses bottles)
+
+### Files Changed
+- `src/commands/install.rs` - NEW: Complete install command implementation
+- `src/commands/mod.rs` - Added install module
+- `src/main.rs` - Added deps, download, install module imports and install dispatch
+- `src/commands/list_commands.rs` - Added install to command list
+- `.ralph/prd.json` - Marked cmd-012 as passing
+
+### Verification
+All install behaviors tested and verified:
+- `brew-rust install hello` installs hello successfully ✓
+- `brew-rust install hello` (already installed) shows warning ✓
+- `brew-rust install wget` installs wget and missing dependencies (libidn2) ✓
+- Dependency resolution correct (skips already-installed openssl@3, gettext, libunistring) ✓
+- Opt symlinks created correctly ✓
+- Tab metadata written ✓
+- Cached bottles used when available ✓
+- `brew-rust install --help` shows help ✓
+
+### Notes
+- GitHub Container Registry (ghcr.io) requires authentication for downloads
+- Uses cached bottles from actual brew (must fetch with brew first for testing)
+- In production, would need HOMEBREW_GITHUB_API_TOKEN or gh CLI authentication
+- Next priority: cmd-013 (deps command) or cmd-014 (uninstall command)

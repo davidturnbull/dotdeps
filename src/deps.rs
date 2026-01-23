@@ -195,6 +195,7 @@ impl DependencyGraph {
     }
 
     /// Get all dependencies for a formula (flattened list).
+    #[allow(dead_code)]
     pub fn get_all_dependencies(&self, formula_name: &str) -> Vec<String> {
         let mut deps = HashSet::new();
         let mut to_visit = VecDeque::new();

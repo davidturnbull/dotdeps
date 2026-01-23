@@ -1,6 +1,9 @@
 mod api;
 mod commands;
+mod deps;
+mod download;
 mod formula;
+mod install;
 mod paths;
 mod system;
 mod tap;
@@ -78,6 +81,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "list" => commands::list::ListCommand.run(args),
         "info" => commands::info::InfoCommand.run(args),
         "search" => commands::search::run(args),
+        "install" => commands::install::run(args).map_err(|e| e.into()),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

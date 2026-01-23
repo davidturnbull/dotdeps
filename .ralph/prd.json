@@ -341,7 +341,8 @@
         "`brew-rust install curl` installs curl and dependencies",
         "`brew-rust install wget` (when already installed) shows already installed message"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full install command implementation with dependency resolution, bottle download/caching, installation to Cellar, opt symlink creation, and Tab metadata. Uses cached bottles when available. Detects already-installed formulae via opt symlink. --force, --verbose, --ignore-dependencies flags supported. --build-from-source parsed but not implemented (bottles always used)."
     },
     {
       "id": "cmd-013",

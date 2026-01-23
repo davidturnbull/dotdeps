@@ -9,6 +9,7 @@ use std::path::PathBuf;
 /// Represents an installed formula (a "keg" in Homebrew terminology)
 pub struct Keg {
     pub name: String,
+    #[allow(dead_code)]
     pub version: String,
     pub path: PathBuf,
 }
@@ -161,6 +162,7 @@ fn get_homebrew_version() -> String {
 }
 
 /// Install a formula from a bottle
+#[allow(dead_code)]
 pub async fn install_bottle(
     formula: &FormulaInfo,
     installed_as_dependency: bool,

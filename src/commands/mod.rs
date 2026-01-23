@@ -4,6 +4,7 @@ pub mod cellar;
 pub mod config;
 pub mod help;
 pub mod info;
+pub mod install;
 pub mod list;
 pub mod list_commands;
 pub mod prefix;

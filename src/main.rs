@@ -92,6 +92,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "info" => commands::info::InfoCommand.run(args),
         "search" => commands::search::run(args),
         "shellenv" => commands::shellenv::run(args),
+        "source" => commands::source::execute(args),
         "install" => commands::install::run(args).map_err(|e| e.into()),
         "deps" => commands::deps::run(args).map_err(|e| e.into()),
         "uninstall" => commands::uninstall::UninstallCommand.run(args),

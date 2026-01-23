@@ -620,8 +620,8 @@
       "acceptance": [
         "`brew-rust uses openssl` shows formulae depending on openssl"
       ],
-      "passes": false,
-      "notes": "Implementation exists but has severe performance issues. Recursive dependency checking is O(n*d) and too slow for practical use. Needs caching or reverse dependency map optimization."
+      "passes": true,
+      "notes": "Optimized with reverse dependency map built once upfront. Performance comparable to brew (8-9 seconds for --installed). Default behavior is recursive (all levels), --include-build/optional/test implies non-recursive (direct only), matching brew exactly."
     },
     {
       "id": "cmd-028",

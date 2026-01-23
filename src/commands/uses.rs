@@ -1,18 +1,19 @@
 use crate::api;
 use crate::paths;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 struct DependencyCheckOptions {
     include_build: bool,
     include_optional: bool,
     include_test: bool,
     skip_recommended: bool,
+    recursive: bool,
 }
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let mut formulae: Vec<String> = Vec::new();
     let mut installed = false;
-    let mut _recursive = false;
+    let mut recursive = false;
     let mut include_build = false;
     let mut include_optional = false;
     let mut include_test = false;
@@ -25,7 +26,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         if arg == "--installed" {
             installed = true;
         } else if arg == "--recursive" {
-            _recursive = true;
+            recursive = true;
         } else if arg == "--include-build" {
             include_build = true;
         } else if arg == "--include-optional" {
@@ -70,17 +71,27 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         load_all_formula_names()?
     };
 
-    // Find dependents for each requested formula
-    let mut results: Option<HashSet<String>> = None;
     let options = DependencyCheckOptions {
         include_build,
         include_optional,
         include_test,
         skip_recommended,
+        // Recursive behavior:
+        // - Default (no flags): recursive (all levels)
+        // - With --recursive: recursive (explicitly requested)
+        // - With --include-build/optional/test: non-recursive (direct only)
+        // This matches brew's behavior where --include-build implies direct deps only
+        recursive: recursive || (!include_build && !include_optional && !include_test),
     };
 
+    // Build reverse dependency map once upfront (formula -> dependents)
+    let reverse_deps = build_reverse_dependency_map(&check_formulae, &options)?;
+
+    // Find dependents for each requested formula
+    let mut results: Option<HashSet<String>> = None;
+
     for formula_name in &formulae {
-        let dependents = find_dependents(formula_name, &check_formulae, &options)?;
+        let dependents = find_dependents_from_map(formula_name, &reverse_deps, &options);
 
         results = match results {
             None => Some(dependents),
@@ -135,115 +146,109 @@ fn load_all_formula_names() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     Ok(names)
 }
 
-fn find_dependents(
-    target: &str,
+/// Build a reverse dependency map: formula -> direct dependents
+fn build_reverse_dependency_map(
     check_formulae: &[String],
     options: &DependencyCheckOptions,
-) -> Result<HashSet<String>, Box<dyn std::error::Error>> {
-    let mut dependents = HashSet::new();
+) -> Result<HashMap<String, HashSet<String>>, Box<dyn std::error::Error>> {
+    let mut map: HashMap<String, HashSet<String>> = HashMap::new();
 
     for formula_name in check_formulae {
-        if depends_on(
-            formula_name,
-            target,
-            options,
-            &mut HashSet::new(),
-            0, // depth
-        )? {
-            dependents.insert(formula_name.clone());
+        // Load formula info once
+        let formula = match api::get_formula(formula_name) {
+            Ok(f) => f,
+            Err(_) => continue, // Skip formulae we can't load
+        };
+
+        // Process runtime dependencies
+        for dep in &formula.dependencies {
+            map.entry(dep.clone())
+                .or_default()
+                .insert(formula_name.clone());
+        }
+
+        // Process build dependencies
+        if options.include_build {
+            for dep in &formula.build_dependencies {
+                map.entry(dep.clone())
+                    .or_default()
+                    .insert(formula_name.clone());
+            }
+        }
+
+        // Process test dependencies
+        if options.include_test {
+            for dep in &formula.test_dependencies {
+                map.entry(dep.clone())
+                    .or_default()
+                    .insert(formula_name.clone());
+            }
+        }
+
+        // Process optional dependencies
+        if options.include_optional {
+            for dep in &formula.optional_dependencies {
+                map.entry(dep.clone())
+                    .or_default()
+                    .insert(formula_name.clone());
+            }
+        }
+
+        // Process recommended dependencies (unless skipped)
+        if !options.skip_recommended {
+            for dep in &formula.recommended_dependencies {
+                map.entry(dep.clone())
+                    .or_default()
+                    .insert(formula_name.clone());
+            }
         }
     }
 
-    Ok(dependents)
+    Ok(map)
 }
 
-fn depends_on(
-    formula_name: &str,
+/// Find all dependents of a formula using the reverse dependency map
+fn find_dependents_from_map(
     target: &str,
+    reverse_deps: &HashMap<String, HashSet<String>>,
     options: &DependencyCheckOptions,
-    visited: &mut HashSet<String>,
-    depth: u32,
-) -> Result<bool, Box<dyn std::error::Error>> {
-    // Depth limit to prevent excessive recursion (set low for performance)
-    // Only check direct dependencies (depth 1) for now
-    if depth > 1 {
-        return Ok(false);
-    }
+) -> HashSet<String> {
+    if !options.recursive {
+        // Non-recursive: just return direct dependents
+        reverse_deps
+            .get(target)
+            .cloned()
+            .unwrap_or_else(HashSet::new)
+    } else {
+        // Recursive: find all transitive dependents
+        let mut all_dependents = HashSet::new();
+        let mut to_visit = Vec::new();
 
-    // Prevent infinite loops
-    if visited.contains(formula_name) {
-        return Ok(false);
-    }
-    visited.insert(formula_name.to_string());
-
-    // Load formula info
-    let formula = match api::get_formula(formula_name) {
-        Ok(f) => f,
-        Err(_) => return Ok(false),
-    };
-
-    // Check direct dependencies
-    for dep in &formula.dependencies {
-        if dep == target {
-            return Ok(true);
-        }
-        // Check transitive dependencies
-        if depends_on(dep, target, options, visited, depth + 1)? {
-            return Ok(true);
-        }
-    }
-
-    // Check build dependencies
-    if options.include_build {
-        for dep in &formula.build_dependencies {
-            if dep == target {
-                return Ok(true);
-            }
-            // Always check transitive dependencies
-            if depends_on(dep, target, options, visited, depth + 1)? {
-                return Ok(true);
+        // Start with direct dependents
+        if let Some(direct_deps) = reverse_deps.get(target) {
+            for dep in direct_deps {
+                to_visit.push(dep.clone());
             }
         }
-    }
 
-    // Check test dependencies
-    if options.include_test {
-        for dep in &formula.test_dependencies {
-            if dep == target {
-                return Ok(true);
+        // BFS to find all transitive dependents
+        while let Some(current) = to_visit.pop() {
+            if all_dependents.contains(&current) {
+                continue; // Already visited
             }
-            // Always check transitive dependencies
-            if depends_on(dep, target, options, visited, depth + 1)? {
-                return Ok(true);
+
+            all_dependents.insert(current.clone());
+
+            // Add dependents of current to visit list
+            if let Some(next_deps) = reverse_deps.get(&current) {
+                for dep in next_deps {
+                    if !all_dependents.contains(dep) {
+                        to_visit.push(dep.clone());
+                    }
+                }
             }
         }
-    }
 
-    // Check optional dependencies
-    if options.include_optional {
-        for dep in &formula.optional_dependencies {
-            if dep == target {
-                return Ok(true);
-            }
-            // Always check transitive dependencies
-            if depends_on(dep, target, options, visited, depth + 1)? {
-                return Ok(true);
-            }
-        }
+        all_dependents
     }
-
-    // Check recommended dependencies (unless skipped)
-    if !options.skip_recommended {
-        for dep in &formula.recommended_dependencies {
-            if dep == target {
-                return Ok(true);
-            }
-            // Always check transitive dependencies
-            if depends_on(dep, target, options, visited, depth + 1)? {
-                return Ok(true);
-            }
-        }
-    }
-
-    Ok(false)
 }

@@ -254,3 +254,51 @@
 - Commit the casks command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 7 - 2026-01-23
+
+### Task: Implement formulae command (cmd-010)
+
+**Completed:**
+- Researched brew formulae behavior (lists all installable formulae with 8495 entries)
+- Created src/commands/formulae.rs following casks.rs pattern
+- Implemented API cache reading from ${HOMEBREW_CACHE}/api/formula_names.txt
+- Implemented filesystem scanning for ALL .rb files in taps (not just Formula/)
+- Fixed path handling to support formulae in subdirectories (e.g., scripts/release.rb)
+- Implemented Homebrew's sed transformation logic:
+  - Remove .rb extension
+  - Strip homebrew-/linuxbrew- prefix from tap names
+  - Remove /Formula/ directory and subdirectories within it
+  - Preserve other subdirectories (e.g., scripts/)
+- Fixed short name generation to use 3rd field (cut -d "/" -f 3 logic)
+- Excluded Casks, .git, cmd, .github, spec, vendor directories from scan
+
+**Key Decisions:**
+- Formulae can exist in multiple locations within a tap:
+  - Standard: user/tap/Formula/name.rb → user/tap/name
+  - Subdirs: user/tap/Formula/subdir/name.rb → user/tap/name (Formula/ stripped)
+  - Root level: user/tap/name.rb → user/tap/name
+  - Other subdirs: user/tap/scripts/release.rb → user/tap/scripts/release
+- Short names are the 3rd field when splitting by "/" (not the last field!)
+  - oven-sh/bun/scripts/release → short name is "scripts"
+- For homebrew/core: only add short names (not full names)
+- For other taps: add BOTH full name and short name
+
+**Testing:**
+- ✅ `brew-rust formulae` matches `brew formulae` exactly (8495 lines)
+- ✅ diff <(brew formulae | sort) <(brew-rust formulae | sort) → no differences
+- ✅ Handles root-level .rb files (anomalyco/tap/sst)
+- ✅ Handles subdirectory formulae (oven-sh/bun/scripts/release)
+- ✅ Correct short name generation (scripts, not release)
+- ✅ Alphabetical sorting matches brew
+
+**Files Changed:**
+- src/commands/formulae.rs (created)
+- src/commands/mod.rs (added formulae module)
+- src/main.rs (added formulae dispatch)
+- .ralph/prd.json (marked cmd-010 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the formulae command implementation
+- Choose next highest priority unimplemented command
+

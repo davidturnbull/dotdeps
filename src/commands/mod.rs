@@ -12,6 +12,7 @@ pub mod deps;
 pub mod desc;
 pub mod doctor;
 pub mod env;
+pub mod formulae;
 pub mod help;
 pub mod home;
 pub mod info;

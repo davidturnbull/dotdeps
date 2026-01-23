@@ -1,3 +1,4 @@
+pub mod alias;
 pub mod autoremove;
 pub mod cache;
 pub mod caskroom;

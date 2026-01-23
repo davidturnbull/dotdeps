@@ -71,3 +71,55 @@
 **Next Steps:**
 - Commit the --env command implementation
 - Choose next highest priority unimplemented command
+
+## Iteration 3 - 2026-01-23
+
+### Task: Implement alias command (cmd-002)
+
+**Completed:**
+- Researched brew alias behavior (listing, showing, creating aliases)
+- Created src/commands/alias.rs with full alias management
+- Implemented alias storage in ~/.brew-aliases (or ~/.config/brew-aliases)
+- Created sanitization for alias names (converts non-word chars to underscore)
+- Implemented symlink creation in HOMEBREW_PREFIX/bin (brew-<alias>)
+- Added comprehensive reserved command validation list
+- Parsed alias files to extract name and command
+- Implemented both brew commands and external commands (with ! prefix)
+- Added proper error handling for duplicate aliases and reserved names
+- Silently handles non-existent aliases (matches brew behavior)
+
+**Key Decisions:**
+- Follow Homebrew's priority: ~/.config/brew-aliases first, then ~/.brew-aliases
+- Sanitize alias names for filenames but preserve original names in symlinks
+- Reserved commands include all built-in, developer, and core commands
+- Display format: `brew alias name='command'` (with \! escape for external commands)
+- External commands are stored with "brew \!command" but displayed as "\!command"
+- Symlinks ensure aliases are executable as `brew-<name>` commands
+- Non-existent aliases exit successfully with no output (matches brew)
+
+**Testing:**
+- ✅ `brew-rust alias` lists all aliases (empty when none exist)
+- ✅ `brew-rust alias name='info wget'` creates alias
+- ✅ `brew-rust alias name` shows specific alias
+- ✅ `brew-rust alias name='!ls -la'` creates external command alias
+- ✅ Output format matches brew exactly including \! escaping
+- ✅ Reserved command names are rejected with proper error
+- ✅ Duplicate aliases are rejected with proper error
+- ✅ Non-existent aliases exit successfully (no error)
+- ✅ Aliases are sorted alphabetically in output
+- ✅ Symlinks are created correctly in HOMEBREW_PREFIX/bin
+
+**Files Changed:**
+- src/commands/alias.rs (created)
+- src/commands/mod.rs (added alias module)
+- src/main.rs (added alias dispatch)
+- .ralph/prd.json (marked cmd-002 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Notes:**
+- --edit flag not implemented (marked as "not yet implemented" error)
+- unalias command is separate task (cmd-025)
+
+**Next Steps:**
+- Commit the alias command implementation
+- Choose next highest priority unimplemented command

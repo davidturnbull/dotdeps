@@ -77,6 +77,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "--taps" => commands::taps::Taps.run(args),
         "--env" => commands::env::EnvCommand.run(args),
         "help" | "--help" | "-h" | "-?" => commands::help::Help.run(args),
+        "alias" => commands::alias::AliasCommand.run(args),
         "commands" => commands::list_commands::Commands.run(args),
         "config" => commands::config::Config.run(args),
         "list" => commands::list::ListCommand.run(args),

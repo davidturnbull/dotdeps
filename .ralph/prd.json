@@ -379,7 +379,8 @@
         "`brew-rust uninstall wget` removes wget",
         "`brew-rust uninstall <formula-with-deps>` shows warning about dependents"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full uninstall command implementation with dependency checking. Removes Cellar directory and opt symlink. --force, --ignore-dependencies flags supported. rm and remove aliases work."
     },
     {
       "id": "cmd-015",

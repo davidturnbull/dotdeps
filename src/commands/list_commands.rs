@@ -20,6 +20,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "install",
     "list",
     "search",
+    "uninstall",
 ];
 
 /// Command aliases (only shown with --include-aliases)
@@ -29,6 +30,8 @@ const COMMAND_ALIASES: &[&str] = &[
     "-v",     // -> --version
     "abv",    // -> info
     "ls",     // -> list
+    "remove", // -> uninstall
+    "rm",     // -> uninstall
 ];
 
 impl Command for Commands {

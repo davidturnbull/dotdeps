@@ -21,6 +21,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "desc",
     "doctor",
     "help",
+    "home",
     "info",
     "install",
     "leaves",
@@ -42,16 +43,17 @@ const BUILTIN_COMMANDS: &[&str] = &[
 
 /// Command aliases (only shown with --include-aliases)
 const COMMAND_ALIASES: &[&str] = &[
-    "--repo", // -> --repository
-    "-S",     // -> search
-    "-v",     // -> --version
-    "abv",    // -> info
-    "dr",     // -> doctor
-    "ln",     // -> link
-    "ls",     // -> list
-    "remove", // -> uninstall
-    "rm",     // -> uninstall
-    "up",     // -> update
+    "--repo",   // -> --repository
+    "-S",       // -> search
+    "-v",       // -> --version
+    "abv",      // -> info
+    "dr",       // -> doctor
+    "homepage", // -> home
+    "ln",       // -> link
+    "ls",       // -> list
+    "remove",   // -> uninstall
+    "rm",       // -> uninstall
+    "up",       // -> update
 ];
 
 impl Command for Commands {

@@ -686,7 +686,8 @@
       "acceptance": [
         "`brew-rust home wget` opens wget homepage"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Opens formula/cask homepages in default browser using platform-specific commands (open on macOS, xdg-open on Linux). Opens https://brew.sh when no arguments provided. Supports --formula/--cask flags and homepage alias."
     },
     {
       "id": "cmd-032",

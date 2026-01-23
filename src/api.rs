@@ -167,6 +167,7 @@ pub struct CaskInfo {
     #[serde(default)]
     pub name: Vec<String>,
     pub desc: Option<String>,
+    pub homepage: Option<String>,
     pub version: Option<String>,
     pub url: Option<String>,
     /// Per-platform URL variations
@@ -458,6 +459,7 @@ fn clone_cask_info(info: &CaskInfo) -> CaskInfo {
         full_token: info.full_token.clone(),
         name: info.name.clone(),
         desc: info.desc.clone(),
+        homepage: info.homepage.clone(),
         version: info.version.clone(),
         url: info.url.clone(),
         variations: info.variations.as_ref().map(|v| {

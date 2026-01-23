@@ -9,6 +9,7 @@ pub mod deps;
 pub mod desc;
 pub mod doctor;
 pub mod help;
+pub mod home;
 pub mod info;
 pub mod install;
 pub mod leaves;

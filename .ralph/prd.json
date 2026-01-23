@@ -603,7 +603,7 @@
       "acceptance": [
         "`brew-rust reinstall wget` reinstalls wget"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cmd-027",

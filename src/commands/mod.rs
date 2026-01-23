@@ -14,6 +14,7 @@ pub mod list_commands;
 pub mod outdated;
 pub mod pin;
 pub mod prefix;
+pub mod reinstall;
 pub mod repository;
 pub mod search;
 pub mod tap;

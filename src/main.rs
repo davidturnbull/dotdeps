@@ -93,6 +93,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "unpin" => commands::unpin::run(args),
         "cleanup" => commands::cleanup::run(args),
         "doctor" => commands::doctor::DoctorCommand.run(args),
+        "reinstall" => commands::reinstall::run(args),
         "tap" => {
             let code = commands::tap::run(args);
             if code == std::process::ExitCode::SUCCESS {

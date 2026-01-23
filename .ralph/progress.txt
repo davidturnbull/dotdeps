@@ -1034,3 +1034,38 @@ All doctor behaviors tested and working:
 - Git installation check uses which command
 - Next priority: Additional Priority 3 commands (reinstall, uses, leaves, autoremove, desc) or Priority 4 commands
 
+## Iteration 30 - 2026-01-23
+
+### Completed Tasks
+- **cmd-026**: Implement reinstall command
+
+### Key Decisions
+- Reinstall command reuses existing install infrastructure
+- Uninstalls formula first (removes keg, opt symlink, and bin/lib/etc symlinks)
+- Then calls install command to reinstall
+- Runs cleanup after installation to remove old versions
+- Does NOT remove dependencies (keeps them installed)
+- Supports --verbose, --quiet, --force, --build-from-source flags
+- --help shows usage information
+
+### Files Changed
+- `src/commands/reinstall.rs` - NEW: Complete reinstall command implementation
+- `src/commands/mod.rs` - Added reinstall module
+- `src/main.rs` - Added reinstall command dispatch
+- `src/commands/list_commands.rs` - Added reinstall to builtin commands
+- `.ralph/prd.json` - Marked cmd-026 as passing
+
+### Verification
+All reinstall behaviors tested and working:
+- `brew-rust reinstall hello` reinstalls hello successfully ✓
+- `brew-rust reinstall --help` shows help text ✓
+- `brew-rust reinstall nonexistent` shows error ✓
+- Output format closely matches brew ✓
+- Cleanup runs after installation ✓
+- Old versions removed ✓
+
+### Notes
+- Reinstall command is Priority 3, now complete
+- Reuses existing install/uninstall logic for consistency
+- Next priority: Additional Priority 3 commands (uses, leaves, autoremove, desc) or Priority 4 commands
+

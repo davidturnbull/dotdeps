@@ -18,6 +18,8 @@ You are creating a one-to-one copy of Homebrew in Rust (2024 version).
 - The goal is to produce a 100% replica of Homebrew.
 - This is a HUGE undertaking, which is why we're approaching it in small chunks.
 - "How do you eat an Elephant?" "One bite at a time."
+- There is no such thing as "close enough".
+- If you deviate AT ALL from an exact replica, record it in a "Wall of shame" section of progress.txt.
 
 ## Research
 

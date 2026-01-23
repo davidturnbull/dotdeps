@@ -115,9 +115,12 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
             commands::edit::execute(args);
             Ok(())
         }
+        "extract" => commands::extract::execute(args),
         "fetch" => commands::fetch::execute(args),
         "readall" => commands::readall::execute(args),
         "reinstall" => commands::reinstall::run(args),
+        "ruby" => commands::ruby::execute(args),
+        "style" => commands::style::execute(args),
         "tab" => commands::tab_cmd::execute(args),
         "tap" => {
             let code = commands::tap::run(args);
@@ -134,7 +137,12 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "leaves" => commands::leaves::run(args),
         "autoremove" => commands::autoremove::run(args),
         "bottle" => commands::bottle::execute(args),
+        "bump" => commands::bump::execute(args),
         "bump-cask-pr" => commands::bump_cask_pr::execute(args),
+        "bump-formula-pr" => commands::bump_formula_pr::execute(args),
+        "bump-revision" => commands::bump_revision::execute(args),
+        "bump-unversioned-casks" => commands::bump_unversioned_casks::execute(args),
+        "create" => commands::create::execute(args),
         "desc" => commands::desc::run(args),
         "casks" => commands::casks::execute(args),
         "formula" => {
@@ -144,6 +152,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "formulae" => commands::formulae::execute(args),
         "cat" => commands::cat::run(args).map_err(|_| "cat command failed".into()),
         "home" | "homepage" => commands::home::run(args).map_err(|_| "home command failed".into()),
+        "irb" => commands::irb::execute(args),
         "log" => commands::log::LogCommand::new().run(args),
         "missing" => commands::missing::execute(args),
         "nodenv-sync" => commands::nodenv_sync::execute(args),
@@ -151,6 +160,8 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "pyenv-sync" => commands::pyenv_sync::execute(args),
         "rbenv-sync" => commands::rbenv_sync::execute(args),
         "test" => commands::test::execute(args),
+        "tests" => commands::tests::execute(args),
+        "typecheck" => commands::typecheck::execute(args),
         "which-formula" => {
             commands::which_formula::execute(args);
             Ok(())

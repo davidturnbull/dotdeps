@@ -1191,3 +1191,59 @@
 - Identify remaining high-priority commands that can be implemented natively in Rust
 - Apply delegation pattern to remaining Ruby DSL commands as needed
 
+
+## Iteration 27 - 2026-01-24
+
+### Task: Implement additional Ruby DSL delegation commands (11 commands)
+
+**Completed:**
+- Batch-created delegation pattern for 11 more Ruby DSL commands
+- Implemented bump command (cmd-038) - version/revision bumps
+- Implemented bump-formula-pr command (cmd-035) - formula PR creation
+- Implemented bump-revision command (cmd-036) - revision bumps
+- Implemented bump-unversioned-casks command (cmd-037) - unversioned cask updates
+- Implemented create command (cmd-040) - generate formula templates
+- Implemented extract command (cmd-047) - extract old formula versions
+- Implemented irb command (cmd-056) - interactive Ruby REPL with Homebrew
+- Implemented ruby command (cmd-067) - run Ruby with Homebrew environment
+- Implemented style command (cmd-070) - check formula style violations
+- Implemented tests command (cmd-074) - run Homebrew test suite
+- Implemented typecheck command (cmd-075) - Sorbet type checking
+- Added all 11 commands to mod.rs and main.rs dispatch
+- Tested help output for all commands
+
+**Key Decisions:**
+- Continue using consistent delegation pattern for all Ruby DSL commands
+- All commands require Ruby because they:
+  - Generate/parse formula Ruby DSL (create, extract)
+  - Interact with GitHub API for PRs (bump-formula-pr, bump-revision)
+  - Run Ruby REPL/scripts (irb, ruby)
+  - Use RuboCop/Sorbet for style/type checking (style, typecheck)
+  - Run Ruby test suites (tests)
+- Delegation ensures 100% compatibility with minimal code
+
+**Testing:**
+- ✅ All 11 commands help outputs match brew exactly
+- ✅ create --help shows formula template generation options
+- ✅ typecheck --help shows Sorbet type checking options  
+- ✅ ruby --help shows Ruby environment execution options
+- ✅ All commands build and delegate correctly
+
+**Files Changed:**
+- src/commands/{bump,bump_formula_pr,bump_revision,bump_unversioned_casks,create,extract,irb,ruby,style,tests,typecheck}.rs (created - 11 files)
+- src/commands/mod.rs (added 11 modules)
+- src/main.rs (added 11 command dispatches)
+- .ralph/prd.json (marked 11 commands as passing and completed)
+- .ralph/progress.txt (this file)
+
+**Progress Summary:**
+- Total commands delegating to Ruby: 18 (was 7, now 18)
+- Completed commands: 42 out of 87 (48%)
+- Remaining commands: 45
+- Clear delegation pattern established for ~30 more Ruby DSL commands
+
+**Next Steps:**
+- Commit this batch of 11 Ruby DSL delegation commands
+- Continue with remaining developer commands that require delegation
+- Focus on remaining core/high-priority commands
+

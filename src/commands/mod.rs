@@ -25,6 +25,7 @@ pub mod unpin;
 pub mod untap;
 pub mod update;
 pub mod upgrade;
+pub mod uses;
 pub mod version;
 
 pub type CommandResult = Result<(), Box<dyn std::error::Error>>;

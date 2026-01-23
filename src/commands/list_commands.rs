@@ -33,6 +33,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "untap",
     "update",
     "upgrade",
+    "uses",
 ];
 
 /// Command aliases (only shown with --include-aliases)

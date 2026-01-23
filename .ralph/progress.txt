@@ -1069,3 +1069,53 @@ All reinstall behaviors tested and working:
 - Reuses existing install/uninstall logic for consistency
 - Next priority: Additional Priority 3 commands (uses, leaves, autoremove, desc) or Priority 4 commands
 
+
+## Iteration 31 - 2026-01-23
+
+### Completed Tasks
+- **cmd-027**: Implement uses command (INCOMPLETE - performance issues)
+
+### Key Decisions
+- Implemented uses command with basic functionality: --installed, --recursive, --include-build, --include-optional, --include-test, --skip-recommended flags
+- Command requires either --installed or --eval-all flag (matching brew behavior)
+- Supports multiple formula arguments with intersection logic (show formulae that depend on ALL specified formulae)
+- Implemented recursive dependency checking with depth limit and cycle detection
+
+### Files Changed
+- `src/commands/uses.rs` - NEW: Complete uses command implementation
+- `src/commands/mod.rs` - Added uses module
+- `src/main.rs` - Added uses command dispatch
+- `src/commands/list_commands.rs` - Added uses to builtin commands
+- `help/uses.txt` - NEW: Help text for uses command
+- `.ralph/prd.json` - Marked cmd-027 with performance issue notes
+
+### Verification
+All uses behaviors match brew interface:
+- `brew-rust uses --help` shows help text ✓
+- `brew-rust uses openssl@3` shows error (needs --installed or --eval-all) ✓
+- Command parses all flags correctly ✓
+
+### Performance Issues
+- Recursive dependency checking is O(n*d) where n=formulae count, d=dependency depth
+- With 100+ installed formulae and depth 5-10, this creates tens of thousands of formula loads
+- Command hangs/runs too slowly for practical use
+- Depth limit of 1-5 prevents correct transitive dependency detection
+- Brew uses must check full dependency trees but does so efficiently (9 sec for all formulae)
+
+### Root Cause
+- Algorithm checks each formula by recursively traversing its entire dependency tree
+- No caching of formula loads (each api::get_formula call loads from disk/JSON)
+- No reverse dependency map (brew likely prebuilds this once)
+
+### Solutions Needed
+1. Build reverse dependency map once upfront
+2. Cache formula loads in memory
+3. Use graph algorithms optimized for reverse lookups
+4. Consider lazy evaluation with memoization
+
+### Notes
+- Basic command structure and flag handling complete and correct
+- Implementation is architecturally sound but needs optimization
+- Marked as incomplete until performance is acceptable (<10 seconds for --installed)
+- Next priority: Move to simpler Priority 3/4 commands or architectural optimizations
+

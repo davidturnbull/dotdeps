@@ -491,3 +491,43 @@
 - Commit the missing command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 12 - 2026-01-23
+
+### Task: Implement unalias command (cmd-025)
+
+**Completed:**
+- Researched brew unalias behavior (removes alias files and symlinks)
+- Created src/commands/unalias.rs with full alias removal
+- Implemented error handling for non-existent aliases
+- Implemented multi-alias support (stops at first error)
+- Added usage message for invalid usage (no arguments)
+- Uses std::process::exit to match brew's exact error output
+- Shares helper functions with alias command (aliases_dir, sanitize_name, etc.)
+
+**Key Decisions:**
+- Use same alias directory detection as alias command (~/.config/brew-aliases or ~/.brew-aliases)
+- Remove both the alias script file and the symlink in HOMEBREW_PREFIX/bin
+- Stop processing at first error (don't continue to next alias)
+- Use std::process::exit(1) instead of returning errors to avoid double error messages
+- Show usage message before exiting when no arguments provided
+
+**Testing:**
+- ✅ `brew-rust unalias test1` matches `brew unalias test1` exactly
+- ✅ `brew-rust unalias nonexistent` shows proper error and exits with code 1
+- ✅ `brew-rust unalias` (no args) shows usage and exits with code 1
+- ✅ `brew-rust unalias test1 test2 test3` removes all three aliases
+- ✅ `brew-rust unalias test1 nonexistent test2` removes test1, errors on nonexistent, doesn't process test2
+- ✅ Both script file and symlink are removed
+- ✅ Error messages match brew exactly (no extra error output)
+
+**Files Changed:**
+- src/commands/unalias.rs (created)
+- src/commands/mod.rs (added unalias module)
+- src/main.rs (added unalias dispatch)
+- .ralph/prd.json (marked cmd-025 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the unalias command implementation
+- Choose next highest priority unimplemented command
+

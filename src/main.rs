@@ -114,6 +114,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
             }
         }
         "untap" => commands::untap::run(args).map_err(|e| e.into()),
+        "unalias" => commands::unalias::UnaliasCommand.run(args),
         "uses" => commands::uses::run(args),
         "leaves" => commands::leaves::run(args),
         "autoremove" => commands::autoremove::run(args),

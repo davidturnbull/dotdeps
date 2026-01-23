@@ -36,6 +36,7 @@ pub mod search;
 pub mod shellenv;
 pub mod tap;
 pub mod taps;
+pub mod unalias;
 pub mod uninstall;
 pub mod unlink;
 pub mod unpin;

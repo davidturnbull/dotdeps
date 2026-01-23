@@ -61,7 +61,7 @@ fn link_formula(
     let opt_path = paths::homebrew_prefix().join("opt").join(formula_name);
 
     // Check if formula is installed by checking opt symlink
-    if !opt_path.exists() && !opt_path.symlink_metadata().is_ok() {
+    if !opt_path.exists() && opt_path.symlink_metadata().is_err() {
         return Err(format!("No such keg: {}", formula_name));
     }
 
@@ -130,10 +130,10 @@ fn is_linked(keg: &Keg) -> Result<bool, String> {
                 }
                 // Also check relative paths
                 let abs_target = bin_dir.join(&target);
-                if let Ok(canonical) = abs_target.canonicalize() {
-                    if canonical.starts_with(&keg.path) {
-                        return Ok(true);
-                    }
+                if let Ok(canonical) = abs_target.canonicalize()
+                    && canonical.starts_with(&keg.path)
+                {
+                    return Ok(true);
                 }
             }
         }
@@ -235,10 +235,11 @@ fn should_skip_file(path: &Path) -> bool {
     }
 
     // Skip Python cached files in site-packages
-    if let Some(ext) = path.extension() {
-        if (ext == "pyc" || ext == "pyo") && path.to_string_lossy().contains("/site-packages/") {
-            return true;
-        }
+    if let Some(ext) = path.extension()
+        && (ext == "pyc" || ext == "pyo")
+        && path.to_string_lossy().contains("/site-packages/")
+    {
+        return true;
     }
 
     false
@@ -257,15 +258,14 @@ fn link_file(
         if let Ok(target) = fs::read_link(dst) {
             // Check if it already points to the right place
             let target_abs = dst.parent().unwrap().join(&target);
-            if let Ok(canonical_target) = target_abs.canonicalize() {
-                if let Ok(canonical_src) = src.canonicalize() {
-                    if canonical_target == canonical_src {
-                        if verbose && !dry_run {
-                            println!("Skipping; link already exists: {}", dst.display());
-                        }
-                        return Ok(0);
-                    }
+            if let Ok(canonical_target) = target_abs.canonicalize()
+                && let Ok(canonical_src) = src.canonicalize()
+                && canonical_target == canonical_src
+            {
+                if verbose && !dry_run {
+                    println!("Skipping; link already exists: {}", dst.display());
                 }
+                return Ok(0);
             }
         }
 

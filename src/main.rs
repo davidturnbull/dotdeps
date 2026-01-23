@@ -107,6 +107,10 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "cleanup" => commands::cleanup::run(args),
         "doctor" => commands::doctor::DoctorCommand.run(args),
         "docs" => commands::docs::execute(args),
+        "edit" => {
+            commands::edit::execute(args);
+            Ok(())
+        }
         "reinstall" => commands::reinstall::run(args),
         "tab" => commands::tab_cmd::execute(args),
         "tap" => {

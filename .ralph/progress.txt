@@ -896,3 +896,58 @@
 - Commit the docs command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 21 - 2026-01-24
+
+### Task: Implement edit command (cmd-046)
+
+**Completed:**
+- Researched brew edit behavior with all flags (--print-path, --formula, --cask)
+- Created src/commands/edit.rs with full formula/cask/tap path resolution
+- Implemented --print-path flag to show file path without opening editor
+- Implemented --formula/--formulae flag to force formula interpretation
+- Implemented --cask/--casks flag to force cask interpretation
+- Implemented editor opening via $HOMEBREW_EDITOR or $EDITOR environment variables
+- Added support for no arguments (opens Homebrew repository)
+- Implemented tap path resolution (user/tap format)
+- Implemented formula path resolution (opt path for API mode, tap scanning)
+- Implemented cask path resolution (tap scanning)
+- Added proper error handling for non-existent formulae/casks/taps
+- Added special error message for unavailable official taps (homebrew/core, homebrew/cask)
+- Added usage message matching brew format exactly
+
+**Key Decisions:**
+- When no arguments: open HOMEBREW_REPOSITORY in editor (or print path with --print-path)
+- When no type flags: try formula first, then cask, default to formula error if neither exists
+- Editor precedence: $HOMEBREW_EDITOR → $EDITOR → vim
+- Path resolution order for formulae:
+  1. Tap-prefixed (user/tap/formula) → Library/Taps/user/homebrew-tap/Formula/name.rb
+  2. API-installed → opt/name/.brew/name.rb
+  3. Scan all taps for name.rb in Formula/ or root
+- Path resolution for casks:
+  1. Tap-prefixed (user/tap/cask) → Library/Taps/user/homebrew-tap/Casks/name.rb
+  2. Scan all taps for name.rb in Casks/
+- Tap resolution: Library/Taps/user/homebrew-{tap}
+- Error format: "Invalid usage: {name} doesn't exist on disk.\nRun {command} to {action}!"
+- Special handling for homebrew/core and homebrew/cask when not installed
+
+**Testing:**
+- ✅ `cargo run -- edit --help` matches `brew edit --help` exactly
+- ✅ `cargo run -- edit --print-path` matches `brew edit --print-path` (repository)
+- ✅ `cargo run -- edit --print-path wget` matches `brew edit --print-path wget`
+- ✅ `cargo run -- edit --print-path --cask aerospace` matches brew
+- ✅ `cargo run -- edit --print-path anomalyco/tap` matches brew
+- ✅ `cargo run -- edit --print-path nonexistent` shows proper error
+- ✅ `cargo run -- edit --print-path homebrew/core` shows special tap error
+- ✅ Exit codes match brew (0 for success, 1 for errors)
+
+**Files Changed:**
+- src/commands/edit.rs (created)
+- src/commands/mod.rs (added edit module)
+- src/main.rs (added edit dispatch)
+- .ralph/prd.json (marked cmd-046 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the edit command implementation
+- Choose next highest priority unimplemented command
+

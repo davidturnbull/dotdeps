@@ -680,7 +680,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew edit behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-047",

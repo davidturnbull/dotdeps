@@ -105,6 +105,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "untap" => commands::untap::run(args).map_err(|e| e.into()),
         "uses" => commands::uses::run(args),
         "leaves" => commands::leaves::run(args),
+        "autoremove" => commands::autoremove::run(args),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

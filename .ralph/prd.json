@@ -653,7 +653,8 @@
       "acceptance": [
         "`brew-rust autoremove` removes unused dependencies"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full autoremove implementation. Finds formulae installed as dependencies with no dependents (including cask dependencies). Supports --dry-run, --quiet, --verbose flags. Output format matches brew exactly."
     },
     {
       "id": "cmd-030",

@@ -1,3 +1,4 @@
+pub mod autoremove;
 pub mod cache;
 pub mod caskroom;
 pub mod cellar;

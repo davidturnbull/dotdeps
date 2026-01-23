@@ -1001,3 +1001,37 @@
 - Commit the update-if-needed command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 23 - 2026-01-24
+
+### Task: Fix update-report command (cmd-027)
+
+**Completed:**
+- Researched brew update-report behavior (internal command, never called directly)
+- Created src/commands/update_report.rs with error message
+- Implemented exit with code 1 matching brew behavior
+- Added update_report module to src/commands/mod.rs
+- Added update-report dispatch to main.rs
+- Verified exact match with brew update-report output
+
+**Key Decisions:**
+- update-report is an internal Ruby implementation detail of brew update
+- Should never be called directly by users
+- Simply display error message and exit with code 1
+- Matches brew's exact error message: "Error: update-report should not be called directly!"
+
+**Testing:**
+- ✅ `cargo run -- update-report` matches `brew update-report` exactly
+- ✅ Exit code 1 (error) matches brew
+- ✅ Error message matches brew exactly
+
+**Files Changed:**
+- src/commands/update_report.rs (created)
+- src/commands/mod.rs (added update_report module)
+- src/main.rs (added update-report dispatch)
+- .ralph/prd.json (marked cmd-027 as passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the update-report command fix
+- Choose next highest priority unimplemented command
+

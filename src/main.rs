@@ -101,6 +101,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "outdated" => commands::outdated::run(args).map_err(|e| e.into()),
         "update" => commands::update::run(args),
         "update-if-needed" => commands::update_if_needed::run(args),
+        "update-report" => commands::update_report::run(args),
         "update-reset" => commands::update_reset::run(args),
         "upgrade" => commands::upgrade::run(args).map_err(|e| e.into()),
         "pin" => commands::pin::run(args),

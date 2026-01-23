@@ -1,0 +1,976 @@
+{
+  "name": "Casa MVP",
+  "description": "Opinionated home management app for couples without children",
+  "version": "1.0.0",
+  "items": [
+    {
+      "category": "Authentication",
+      "description": "User can sign up with email and password",
+      "steps_to_verify": [
+        "Navigate to signup page",
+        "Enter valid email address",
+        "Enter password meeting requirements",
+        "Submit form",
+        "User account is created and user is logged in"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Authentication",
+      "description": "User can log in with email and password",
+      "steps_to_verify": [
+        "Navigate to login page",
+        "Enter registered email address",
+        "Enter correct password",
+        "Submit form",
+        "User is authenticated and redirected to dashboard"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Authentication",
+      "description": "User can log out",
+      "steps_to_verify": [
+        "While logged in, click logout button",
+        "Session is terminated",
+        "User is redirected to login page",
+        "Protected routes are no longer accessible"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "User can create a home and give it a name",
+      "steps_to_verify": [
+        "Navigate to create home page",
+        "Enter home name (e.g., 'Our Apartment')",
+        "Submit form",
+        "Home is created with user as member",
+        "User is redirected to home dashboard"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "User can invite partner to join home via email",
+      "steps_to_verify": [
+        "Navigate to home settings",
+        "Click invite partner button",
+        "Enter partner's email address",
+        "Submit invitation",
+        "Invitation record is created with 7-day expiry",
+        "Partner receives email with invitation link"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "User can accept invitation to join a home",
+      "steps_to_verify": [
+        "Click invitation link from email",
+        "If not logged in, prompt to login/signup",
+        "Display home name and inviter info",
+        "Click accept button",
+        "User is added as home member",
+        "User is redirected to home dashboard"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "User can decline invitation to join a home",
+      "steps_to_verify": [
+        "Click invitation link from email",
+        "Display home name and inviter info",
+        "Click decline button",
+        "Invitation is marked as declined",
+        "User is not added to home"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "User can belong to multiple homes",
+      "steps_to_verify": [
+        "User is member of one home",
+        "Create or accept invitation to second home",
+        "Both homes appear in home switcher",
+        "User can switch between homes",
+        "Each home has independent data"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "User can leave a home at any time",
+      "steps_to_verify": [
+        "Navigate to home settings",
+        "Click leave home button",
+        "Confirm action in dialog",
+        "User membership is removed",
+        "User can no longer access home data",
+        "Other members remain unaffected"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "Last member leaving home is warned that leaving will delete all data",
+      "steps_to_verify": [
+        "User is sole member of home",
+        "Click leave home button",
+        "Warning dialog explains all data will be deleted",
+        "Require explicit confirmation (type home name or checkbox)",
+        "On confirm, home and all associated data is deleted"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "Invitation tokens expire after 7 days",
+      "steps_to_verify": [
+        "Create invitation",
+        "Verify invitation has expiry timestamp 7 days in future",
+        "Attempt to use invitation after 7 days",
+        "Display error message that invitation has expired",
+        "Invitation cannot be accepted"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Home Setup",
+      "description": "Default shopping list is created when home is created",
+      "steps_to_verify": [
+        "Create a new home",
+        "Navigate to shopping lists",
+        "A default shopping list exists (e.g., 'Shopping List')",
+        "List is ready to add items"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Shopping Lists",
+      "description": "User can create multiple shopping lists within a home",
+      "steps_to_verify": [
+        "Navigate to shopping lists",
+        "Click create new list button",
+        "Enter list name (e.g., 'Woolworths', 'Hardware Store')",
+        "Submit form",
+        "New list appears in list of shopping lists",
+        "Can create additional lists"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Shopping Lists",
+      "description": "User can rename a shopping list",
+      "steps_to_verify": [
+        "Navigate to shopping list",
+        "Open list settings or edit mode",
+        "Change list name",
+        "Save changes",
+        "New name is displayed",
+        "Change is visible to partner"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Shopping Lists",
+      "description": "User can delete a shopping list",
+      "steps_to_verify": [
+        "Navigate to shopping list",
+        "Open list settings",
+        "Click delete button",
+        "Confirm deletion in dialog",
+        "List and all items are deleted",
+        "List no longer appears in shopping lists"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Shopping Lists",
+      "description": "User can assign a default store/location to a list",
+      "steps_to_verify": [
+        "Navigate to shopping list settings",
+        "Click assign location",
+        "Select from saved locations or search for new one",
+        "Save selection",
+        "Location is displayed on list",
+        "New items default to this location"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Shopping Lists",
+      "description": "User can share a read-only link to a list",
+      "steps_to_verify": [
+        "Navigate to shopping list",
+        "Click share button",
+        "Generate shareable link",
+        "Copy link to clipboard",
+        "Open link in incognito/different browser",
+        "List is viewable without login",
+        "Cannot edit, check off, or modify items"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Shopping Lists",
+      "description": "User can archive a list to hide it without deleting",
+      "steps_to_verify": [
+        "Navigate to shopping list",
+        "Click archive button",
+        "List is removed from main list view",
+        "List appears in archived lists section",
+        "Archived list retains all data",
+        "Can unarchive list to restore it"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can add items to a list with name, quantity, and optional unit",
+      "steps_to_verify": [
+        "Navigate to shopping list",
+        "Click add item or type in input field",
+        "Enter item name (e.g., 'Milk')",
+        "Set quantity (default 1)",
+        "Optionally select unit (e.g., 'L', 'kg', 'pack')",
+        "Submit item",
+        "Item appears in list with correct details"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can add a note to an item",
+      "steps_to_verify": [
+        "Add or select an item",
+        "Open item detail view",
+        "Enter note (e.g., 'the one with the blue label')",
+        "Save item",
+        "Note is displayed with item",
+        "Note is visible to partner"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can attach photos to an item",
+      "steps_to_verify": [
+        "Open item detail view",
+        "Click add photo button",
+        "Select photo from device or take new photo",
+        "Photo is uploaded and attached to item",
+        "Photo thumbnail is displayed",
+        "Can add multiple photos",
+        "Photos are visible to partner"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Items",
+      "description": "User can assign an item to a specific store overriding the list default",
+      "steps_to_verify": [
+        "List has default location set",
+        "Add item to list",
+        "Open item detail view",
+        "Select different location for this item",
+        "Save item",
+        "Item shows overridden location",
+        "Other items still show list default"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can mark an item as urgent",
+      "steps_to_verify": [
+        "Add or select an item",
+        "Toggle urgent flag on",
+        "Item is visually distinguished (badge, color, etc.)",
+        "Urgent items appear at top or in separate section",
+        "Can toggle urgent flag off"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can reorder items manually",
+      "steps_to_verify": [
+        "List has multiple items",
+        "Drag item to new position",
+        "Item order is updated",
+        "New order persists after refresh",
+        "New order is visible to partner"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Items",
+      "description": "User can check off items when purchased",
+      "steps_to_verify": [
+        "Navigate to shopping list with items",
+        "Tap/click item checkbox",
+        "Item is marked as completed",
+        "Item moves to completed section",
+        "Completed timestamp is recorded",
+        "Completed by user is recorded"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can uncheck items",
+      "steps_to_verify": [
+        "Navigate to completed items section",
+        "Tap/click completed item checkbox",
+        "Item is unmarked as completed",
+        "Item moves back to pending section",
+        "Completed metadata is cleared"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can see who added an item and who checked it off",
+      "steps_to_verify": [
+        "Partner adds an item",
+        "Item shows 'Added by [partner name]'",
+        "Check off the item",
+        "Item shows 'Completed by [your name]'",
+        "Both attributions visible in item detail"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Items",
+      "description": "User can clear all completed items from a list",
+      "steps_to_verify": [
+        "List has completed items",
+        "Click clear completed button",
+        "Confirm action in dialog",
+        "All completed items are removed",
+        "Pending items remain unchanged"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Templates",
+      "description": "User can save a list as a template for reuse",
+      "steps_to_verify": [
+        "Navigate to shopping list with items",
+        "Click save as template",
+        "Enter template name",
+        "Submit form",
+        "Template is created with copy of current items",
+        "Template appears in templates list"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Templates",
+      "description": "User can create a new list from a template",
+      "steps_to_verify": [
+        "Navigate to templates",
+        "Select a template",
+        "Click create list from template",
+        "Enter new list name",
+        "New list is created with template items",
+        "All items are in pending state"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Templates",
+      "description": "User can add template items to an existing list",
+      "steps_to_verify": [
+        "Navigate to existing shopping list",
+        "Click add from template",
+        "Select a template",
+        "Template items are added to list",
+        "Existing items remain unchanged",
+        "Duplicate items are handled appropriately"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Templates",
+      "description": "User can edit templates directly",
+      "steps_to_verify": [
+        "Navigate to templates",
+        "Select a template to edit",
+        "Add, remove, or modify items",
+        "Save changes",
+        "Template reflects updates",
+        "Existing lists created from template are not affected"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Locations",
+      "description": "User can add stores/locations to home",
+      "steps_to_verify": [
+        "Navigate to locations settings",
+        "Click add location",
+        "Search or enter location details",
+        "Save location",
+        "Location appears in home's locations list",
+        "Location is available for lists and items"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Locations",
+      "description": "User can search for locations via Google Places",
+      "steps_to_verify": [
+        "Click add location",
+        "Enter search query (e.g., 'Woolworths Sydney')",
+        "Google Places results are displayed",
+        "Select a result",
+        "Location details are populated from API",
+        "Place ID and coordinates are stored"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Locations",
+      "description": "User can search for locations via Apple Maps",
+      "steps_to_verify": [
+        "Click add location",
+        "Enter search query",
+        "Apple MapKit results are displayed",
+        "Select a result",
+        "Location details are populated from API",
+        "Place ID and coordinates are stored"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Locations",
+      "description": "User can add custom locations manually",
+      "steps_to_verify": [
+        "Click add location",
+        "Click manual entry option",
+        "Enter custom name and address",
+        "Optionally pin on map for coordinates",
+        "Save location",
+        "Custom location is saved without place ID"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Locations",
+      "description": "User can assign locations to lists or individual items",
+      "steps_to_verify": [
+        "Create a location",
+        "Assign to shopping list default",
+        "Verify list shows location",
+        "Override location on individual item",
+        "Verify item shows overridden location"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Categories",
+      "description": "User can assign a category to items",
+      "steps_to_verify": [
+        "Add or select an item",
+        "Open category picker",
+        "Select category (e.g., 'Dairy', 'Produce')",
+        "Save item",
+        "Item displays assigned category",
+        "Category is visible in list view"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Categories",
+      "description": "User can view items grouped by category",
+      "steps_to_verify": [
+        "List has items with various categories",
+        "Enable group by category view",
+        "Items are displayed in category sections",
+        "Uncategorized items appear in separate section",
+        "Can toggle back to flat view"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Categories",
+      "description": "User can reorder categories",
+      "steps_to_verify": [
+        "Navigate to category settings",
+        "Drag category to new position",
+        "Category order is updated",
+        "New order is reflected in grouped view",
+        "Order persists after refresh"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Categories",
+      "description": "User can set category order per store",
+      "steps_to_verify": [
+        "Navigate to store-specific settings",
+        "Reorder categories for Store A",
+        "Set different order for Store B",
+        "View list assigned to Store A",
+        "Categories appear in Store A order",
+        "View list assigned to Store B",
+        "Categories appear in Store B order"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Suggestions",
+      "description": "User sees autocomplete suggestions based on items added before",
+      "steps_to_verify": [
+        "Add item 'Milk' to a list",
+        "Start adding new item",
+        "Type 'Mi'",
+        "Autocomplete shows 'Milk' as suggestion",
+        "Can select suggestion to auto-fill",
+        "Recent/frequent items ranked higher"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Suggestions",
+      "description": "User can quickly add frequently purchased items",
+      "steps_to_verify": [
+        "Items have been added multiple times historically",
+        "Open quick add / suggestions panel",
+        "Frequently purchased items are displayed",
+        "Tap item to add to current list",
+        "Item is added with previous details (quantity, unit, category)"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Real-Time Sync",
+      "description": "User sees changes partner makes immediately",
+      "steps_to_verify": [
+        "Both partners have same list open",
+        "Partner A adds an item",
+        "Partner B sees item appear within 500ms",
+        "No manual refresh required",
+        "Works for add, edit, delete, and check-off actions"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Real-Time Sync",
+      "description": "User can see items being checked off while partner shops",
+      "steps_to_verify": [
+        "Both partners have same list open",
+        "Partner A checks off item",
+        "Partner B sees item move to completed section",
+        "Visual feedback shows real-time update",
+        "Attribution shows Partner A completed item"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Task Lists",
+      "description": "User can create multiple task lists",
+      "steps_to_verify": [
+        "Navigate to tasks section",
+        "Click create new task list",
+        "Enter list name (e.g., 'Chores', 'House Projects')",
+        "Submit form",
+        "New task list is created",
+        "Can create additional lists"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Task Lists",
+      "description": "User can rename or delete any task list",
+      "steps_to_verify": [
+        "Navigate to task list settings",
+        "Change list name and save",
+        "New name is displayed",
+        "Click delete button",
+        "Confirm deletion",
+        "List and all tasks are deleted"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Task Lists",
+      "description": "User can archive a task list",
+      "steps_to_verify": [
+        "Navigate to task list settings",
+        "Click archive button",
+        "List is removed from main view",
+        "List appears in archived section",
+        "Can unarchive to restore"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Tasks",
+      "description": "User can add tasks with name and optional due date",
+      "steps_to_verify": [
+        "Navigate to task list",
+        "Click add task",
+        "Enter task name",
+        "Optionally set due date",
+        "Submit form",
+        "Task appears in list",
+        "Due date is displayed if set"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Tasks",
+      "description": "User can add notes to a task",
+      "steps_to_verify": [
+        "Open task detail view",
+        "Enter notes text",
+        "Save task",
+        "Notes are displayed with task",
+        "Notes are visible to partner"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Tasks",
+      "description": "User can attach photos to a task",
+      "steps_to_verify": [
+        "Open task detail view",
+        "Click add photo",
+        "Select or capture photo",
+        "Photo is uploaded and attached",
+        "Photo is displayed in task detail",
+        "Can add multiple photos"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Tasks",
+      "description": "User can mark a task as urgent",
+      "steps_to_verify": [
+        "Open task detail view",
+        "Toggle urgent flag on",
+        "Task is visually distinguished",
+        "Urgent tasks appear prominently",
+        "Can toggle urgent flag off"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Tasks",
+      "description": "User can reorder tasks manually",
+      "steps_to_verify": [
+        "Task list has multiple tasks",
+        "Drag task to new position",
+        "Order is updated",
+        "Order persists after refresh",
+        "Order is visible to partner"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Tasks",
+      "description": "User can complete and uncomplete a task",
+      "steps_to_verify": [
+        "Tap task checkbox to complete",
+        "Task is marked as completed",
+        "Completed timestamp recorded",
+        "Completed by user recorded",
+        "Tap again to uncomplete",
+        "Task returns to pending state"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Tasks",
+      "description": "User can see who created a task and who completed it",
+      "steps_to_verify": [
+        "Partner creates a task",
+        "Task shows 'Created by [partner name]'",
+        "Complete the task",
+        "Task shows 'Completed by [your name]'",
+        "Both attributions visible in detail view"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Recurring Tasks",
+      "description": "User can set a task to repeat on various intervals",
+      "steps_to_verify": [
+        "Open task detail view",
+        "Enable recurrence",
+        "Select interval (daily, weekly, fortnightly, monthly, yearly)",
+        "Save task",
+        "Recurrence is displayed on task",
+        "Can set custom interval"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Recurring Tasks",
+      "description": "User can see when a recurring task is next due",
+      "steps_to_verify": [
+        "Task has recurrence set",
+        "Task displays next due date",
+        "After completion, next occurrence date is shown",
+        "Due date respects recurrence interval"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Recurring Tasks",
+      "description": "Completing a recurring task automatically creates next occurrence",
+      "steps_to_verify": [
+        "Task has weekly recurrence",
+        "Complete the task",
+        "New task instance is created",
+        "New task due date is one week from original",
+        "Original task marked as completed",
+        "Can complete new instance to continue chain"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Task Claiming",
+      "description": "User can claim a task to indicate they will handle it",
+      "steps_to_verify": [
+        "Open task detail view",
+        "Click claim button",
+        "Task shows user's name as claimant",
+        "Claimed status visible in list view",
+        "Can unclaim task"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Task Claiming",
+      "description": "Partner can still complete a claimed task",
+      "steps_to_verify": [
+        "User A claims a task",
+        "User B views the claimed task",
+        "User B can still check off the task",
+        "Task is completed by User B",
+        "Completion attribution shows User B"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Task Due Dates",
+      "description": "User can view tasks grouped by due date",
+      "steps_to_verify": [
+        "Tasks exist with various due dates",
+        "Enable due date grouping",
+        "Tasks appear in sections: Overdue, Today, Upcoming, No Date",
+        "Tasks sorted by date within sections"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Task Due Dates",
+      "description": "User can view tasks in a calendar view",
+      "steps_to_verify": [
+        "Navigate to tasks calendar view",
+        "Calendar displays current month",
+        "Days with tasks show indicators",
+        "Click day to see tasks due that day",
+        "Can navigate between months"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Notes",
+      "description": "User can create notes with title and content",
+      "steps_to_verify": [
+        "Navigate to notes section",
+        "Click create new note",
+        "Enter title",
+        "Enter content",
+        "Save note",
+        "Note appears in notes list"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Notes",
+      "description": "User can edit or delete any note",
+      "steps_to_verify": [
+        "Open existing note",
+        "Modify title or content",
+        "Save changes",
+        "Changes are persisted",
+        "Click delete button",
+        "Confirm deletion",
+        "Note is removed"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Notes",
+      "description": "User can pin important notes to the top",
+      "steps_to_verify": [
+        "Open note",
+        "Click pin button",
+        "Note appears at top of notes list",
+        "Pinned indicator is displayed",
+        "Can unpin to restore normal order"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Notes",
+      "description": "User can see who last edited a note",
+      "steps_to_verify": [
+        "Create a note",
+        "Note shows 'Created by [your name]'",
+        "Partner edits the note",
+        "Note shows 'Last edited by [partner name]'",
+        "Timestamp is displayed"
+      ],
+      "passes": true
+    },
+    {
+      "category": "Notes",
+      "description": "User can search notes by title or content",
+      "steps_to_verify": [
+        "Multiple notes exist",
+        "Enter search query in search bar",
+        "Results filter to matching notes",
+        "Matches in title and content are found",
+        "Clear search to restore full list"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Notes",
+      "description": "User can organize notes into folders",
+      "steps_to_verify": [
+        "Create a folder",
+        "Move notes into folder",
+        "Folder displays in navigation",
+        "Can view notes within folder",
+        "Can move notes between folders"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Notes",
+      "description": "User can format note content with rich text",
+      "steps_to_verify": [
+        "Open note editor",
+        "Apply heading format",
+        "Create bulleted list",
+        "Apply bold and italic formatting",
+        "Save note",
+        "Formatting is preserved and displayed"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Notes",
+      "description": "User can attach photos to a note",
+      "steps_to_verify": [
+        "Open note",
+        "Click add photo",
+        "Select or capture photo",
+        "Photo is uploaded and embedded",
+        "Can add multiple photos",
+        "Photos display inline in note"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Notes",
+      "description": "User can add links to a note",
+      "steps_to_verify": [
+        "Open note editor",
+        "Add URL text",
+        "URL is automatically linked",
+        "Or use link button to add link with custom text",
+        "Clicking link opens in browser"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Equality",
+      "description": "Both partners have identical capabilities with no owner or admin role",
+      "steps_to_verify": [
+        "User A creates home and invites User B",
+        "User B joins home",
+        "User B can create, edit, delete lists",
+        "User B can invite additional members",
+        "User B can access all home settings",
+        "No UI elements show User A as owner"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Equality",
+      "description": "Any member can invite, edit, or delete anything",
+      "steps_to_verify": [
+        "User A creates shopping list",
+        "User B can rename the list",
+        "User B can delete the list",
+        "User B can invite new member (if supported)",
+        "User A creates task",
+        "User B can edit and delete the task"
+      ],
+      "passes": false
+    },
+    {
+      "category": "Onboarding",
+      "description": "New user completes onboarding flow successfully",
+      "steps_to_verify": [
+        "Sign up with email and password",
+        "Prompted to create home with name",
+        "Option to invite partner (can skip)",
+        "Default shopping list is created",
+        "Tutorial prompts shown to add first item",
+        "Completing tutorial marks onboarding complete"
+      ],
+      "passes": false
+    },
+    {
+      "category": "UI/UX",
+      "description": "Home dashboard shows overview of lists, tasks, and pinned notes",
+      "steps_to_verify": [
+        "Navigate to home dashboard",
+        "Shopping lists are visible with item counts",
+        "Task lists are visible with pending counts",
+        "Pinned notes are displayed",
+        "Quick-add floating button is present",
+        "Partner avatar shown if they are active"
+      ],
+      "passes": false
+    },
+    {
+      "category": "UI/UX",
+      "description": "Shopping list view shows items grouped by category with pending at top",
+      "steps_to_verify": [
+        "Navigate to shopping list",
+        "Items grouped by category",
+        "Pending items appear at top",
+        "Completed items collapsed at bottom",
+        "Tap item to check off",
+        "Long-press for item options"
+      ],
+      "passes": false
+    },
+    {
+      "category": "UI/UX",
+      "description": "Task list view shows tasks grouped by due date",
+      "steps_to_verify": [
+        "Navigate to task list",
+        "Tasks grouped: Overdue, Today, Upcoming, No Date",
+        "Completed tasks collapsed at bottom",
+        "Tap to complete",
+        "Long-press for task options",
+        "Filter by claimed/unclaimed available"
+      ],
+      "passes": false
+    }
+  ]
+}

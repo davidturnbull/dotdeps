@@ -3,6 +3,7 @@ pub mod caskroom;
 pub mod cellar;
 pub mod config;
 pub mod help;
+pub mod list;
 pub mod list_commands;
 pub mod prefix;
 pub mod repository;

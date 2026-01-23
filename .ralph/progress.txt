@@ -310,3 +310,42 @@ All tap management features tested:
 - Tap struct provides foundation for future tap commands (tap, untap)
 - Next priority: Functional commands that use formula/tap info (cmd-009: list, cmd-010: info, cmd-011: search)
 
+## Iteration 11 - 2026-01-23
+
+### Completed Tasks
+- **cmd-009**: Implement list command
+
+### Key Decisions
+- List command without arguments lists all installed formulae (sorted alphabetically)
+- --cask flag lists only casks
+- --versions flag shows versions for all formulae or specific formulae when provided
+- --pinned flag filters to only pinned formulae (checks var/homebrew/pinned directory)
+- When specific formula/cask provided, uses system `ls` command to list files (matches brew behavior)
+- Auto-detects whether item is formula or cask when no flag specified
+- Finds latest version directory when multiple versions exist
+
+### Files Changed
+- `src/commands/list.rs` - NEW: Full list command implementation
+- `src/commands/mod.rs` - Added list module
+- `src/main.rs` - Added list command dispatch
+- `src/commands/list_commands.rs` - Added "list" and "ls" alias to command list
+- `.ralph/prd.json` - Marked cmd-009 as passing
+
+### Verification
+All list behaviors tested and working:
+- `brew-rust list` lists all formulae ✓
+- `brew-rust list --cask` lists all casks ✓
+- `brew-rust list --versions` shows versions for all formulae ✓
+- `brew-rust list --versions git` shows git versions ✓
+- `brew-rust list git` lists git files using ls ✓
+- `brew-rust list ghostty` lists cask artifacts ✓
+- `brew-rust list --pinned` shows no output (no pinned formulae) ✓
+- `brew-rust ls` alias works ✓
+
+### Notes
+- Basic list functionality complete
+- Uses system ls for file listing (simple approach, matches brew for basic usage)
+- Advanced flags (--full-name, --multiple, --installed-on-request, etc.) not implemented
+- Formula file listing uses ls output (not full recursive listing)
+- Next priority: cmd-010 (info command) or cmd-011 (search command)
+

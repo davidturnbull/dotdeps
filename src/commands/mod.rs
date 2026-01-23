@@ -8,6 +8,7 @@ pub mod cat;
 pub mod cellar;
 pub mod cleanup;
 pub mod command;
+pub mod command_not_found_init;
 pub mod config;
 pub mod deps;
 pub mod desc;

@@ -355,3 +355,46 @@
 - Commit the command command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 9 - 2026-01-23
+
+### Task: Implement command-not-found-init command (cmd-006)
+
+**Completed:**
+- Researched brew command-not-found-init behavior (TTY vs piped output)
+- Created src/commands/command_not_found_init.rs with full shell detection
+- Implemented two output modes:
+  - TTY mode: prints instructions for setting up the handler (shell-specific)
+  - Piped mode: prints the actual handler script content (shell-specific)
+- Embedded both handler scripts as constants (HANDLER_SH, HANDLER_FISH)
+- Implemented shell detection via PPID and fallback to $SHELL (matching shellenv pattern)
+- Added support for bash, zsh, and fish shells
+- Used $(brew --repository) in help text (not hardcoded paths)
+
+**Key Decisions:**
+- Detect TTY status using std::io::stdout().is_terminal()
+- Shell detection order: parent process (PPID) → $SHELL → default to bash
+- When TTY: show help/instructions for setting up command-not-found
+- When piped: output the actual handler script to be sourced
+- Handler scripts are embedded as string constants (not read from files)
+- Fish uses different handler script than bash/zsh
+- Help text uses $(brew --repository) for portability
+
+**Testing:**
+- ✅ `brew-rust command-not-found-init </dev/null` matches `brew command-not-found-init </dev/null`
+- ✅ TTY output for bash matches brew exactly
+- ✅ TTY output for zsh matches brew exactly
+- ✅ TTY output for fish matches brew exactly
+- ✅ Handler script content matches original files exactly
+- ✅ Shell detection from parent process works correctly
+
+**Files Changed:**
+- src/commands/command_not_found_init.rs (created)
+- src/commands/mod.rs (added command_not_found_init module)
+- src/main.rs (added command-not-found-init dispatch)
+- .ralph/prd.json (marked cmd-006 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the command-not-found-init command implementation
+- Choose next highest priority unimplemented command
+

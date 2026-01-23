@@ -13,6 +13,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "--taps",
     "--version",
     "commands",
+    "config",
     "help",
 ];
 

@@ -73,6 +73,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "--taps" => commands::taps::Taps.run(args),
         "help" | "--help" | "-h" | "-?" => commands::help::Help.run(args),
         "commands" => commands::list_commands::Commands.run(args),
+        "config" => commands::config::Config.run(args),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

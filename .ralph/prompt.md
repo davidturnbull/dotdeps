@@ -54,7 +54,7 @@ You have access to the following resources:
 
 If no tasks exist in the tasks file:
 
-1. Identify the most logical next step(s).
+1. Explore, investigate, and verify homebrew behavior.
 2. Create the task(s) in the following format:
 
    ```json

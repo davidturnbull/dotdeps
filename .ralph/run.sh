@@ -21,10 +21,10 @@ if [ ! -f "$PROMPT_FILE" ]; then
   exit 1
 fi
 
-if [ ! -f "$SPEC_FILE" ]; then
-  echo "Error: Spec file not found at $SPEC_FILE"
-  exit 1
-fi
+# if [ ! -f "$SPEC_FILE" ]; then
+#   echo "Error: Spec file not found at $SPEC_FILE"
+#   exit 1
+# fi
 
 # Create progress file if it doesn't exist
 if [ ! -f "$PROGRESS_FILE" ]; then

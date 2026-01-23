@@ -168,7 +168,7 @@
       "acceptance": [
         "`brew-rust config` shows relevant system configuration"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "arch-003",

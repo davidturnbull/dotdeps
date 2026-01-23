@@ -213,3 +213,30 @@ All commands behaviors tested and match `brew` output pattern:
 - External commands section not yet implemented
 - Next priority: cmd-008 (config command)
 
+## Iteration 8 - 2026-01-23
+
+### Completed Tasks
+- **cmd-008**: Implement config command
+
+### Key Decisions
+- Shows Homebrew version, git info, environment variables, and system info
+- Ruby version shows highest version in portable-ruby directory
+- Uses system commands (git, sysctl, clang, etc.) for version detection
+- Matches most of brew config output format
+
+### Files Changed
+- `src/commands/config.rs` - NEW: Full config command implementation
+- `src/commands/mod.rs` - Added config module
+- `src/main.rs` - Added config dispatch
+- `src/commands/list_commands.rs` - Added config to command list
+- `src/commands/help.rs` - Added config help text
+
+### Verification
+- `brew-rust config` shows system configuration ✓
+- Output format closely matches `brew config` ✓
+
+### Notes
+- Some minor formatting differences from brew (CPU format, git path)
+- Metal Toolchain detection not implemented
+- Next priority: higher-priority architectural tasks or more functional commands
+

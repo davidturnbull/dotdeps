@@ -68,6 +68,7 @@ fn get_command_help(cmd: &str) -> Option<&'static str> {
         "--caskroom" => Some(HELP_CASKROOM),
         "--taps" => Some(HELP_TAPS),
         "commands" => Some(HELP_COMMANDS),
+        "config" => Some(HELP_CONFIG),
         "help" => Some(HELP_HELP),
         _ => None,
     }
@@ -185,6 +186,16 @@ Show lists of built-in and external commands.
                                    category headers.
       --include-aliases            Include aliases of internal commands.
   -d, --debug                      Display any debugging information.
+  -v, --verbose                    Make some output more verbose.
+  -h, --help                       Show this message."#;
+
+const HELP_CONFIG: &str = r#"Usage: brew config, --config
+
+Show Homebrew and system configuration info useful for debugging. If you file a
+bug report, you will be required to provide this information.
+
+  -d, --debug                      Display any debugging information.
+  -q, --quiet                      Make some output more quiet.
   -v, --verbose                    Make some output more verbose.
   -h, --help                       Show this message."#;
 

@@ -843,3 +843,42 @@ All upgrade behaviors tested and match brew output:
 - All architectural foundations (paths, formula parsing, dependency resolution, download, install) working together
 - Pinned formulae are automatically skipped (pin/unpin commands not yet implemented)
 - Next priority: Additional high-priority commands or cleanup/polish tasks
+## Iteration 25 - 2026-01-23
+
+### Completed Tasks
+- **cmd-023**: Implement pin command
+- **cmd-024**: Implement unpin command
+
+### Key Decisions
+- Pin creates symlink in var/homebrew/pinned pointing to Cellar version
+- Symlink uses relative path: ../../../Cellar/formula/version
+- Unpin removes the symlink from var/homebrew/pinned
+- Both commands validate formula existence before operating
+- Both support multiple formula arguments
+- Both show warnings for already-pinned/not-pinned formulae
+- Error messages match brew exactly
+
+### Files Changed
+- `src/commands/pin.rs` - NEW: Complete pin command implementation
+- `src/commands/unpin.rs` - NEW: Complete unpin command implementation
+- `src/commands/mod.rs` - Added pin and unpin modules
+- `src/main.rs` - Added pin and unpin command dispatch
+- `src/commands/list_commands.rs` - Added pin and unpin to builtin commands
+- `.ralph/prd.json` - Marked cmd-023 and cmd-024 as passing
+
+### Verification
+All pin/unpin behaviors tested and match brew output:
+- `brew-rust pin hello` creates pin symlink ✓
+- `brew-rust pin hello` (already pinned) shows warning ✓
+- `brew-rust pin nonexistent` shows error ✓
+- `brew-rust unpin hello` removes pin symlink ✓
+- `brew-rust unpin hello` (not pinned) shows warning ✓
+- `brew-rust unpin nonexistent` shows error ✓
+- Output format matches brew exactly ✓
+- Error messages match brew exactly ✓
+
+### Notes
+- Pin/unpin commands integrate with existing upgrade command (which already checks for pinned formulae)
+- All acceptance criteria met
+- Next priority: Additional Priority 2 commands (cleanup, tap, untap, doctor) or Priority 3 commands
+

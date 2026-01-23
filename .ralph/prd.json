@@ -545,7 +545,8 @@
         "`brew-rust pin wget` pins wget",
         "`brew-rust upgrade` skips pinned formulae"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Pin command creates symlink in var/homebrew/pinned pointing to Cellar version. Supports multiple formulae, validates existence and installation status, warns if already pinned."
     },
     {
       "id": "cmd-024",
@@ -561,7 +562,8 @@
       "acceptance": [
         "`brew-rust unpin wget` unpins wget"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Unpin command removes symlink from var/homebrew/pinned. Supports multiple formulae, validates formula existence, warns if not pinned."
     },
     {
       "id": "cmd-025",

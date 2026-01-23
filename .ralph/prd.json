@@ -530,7 +530,8 @@
         "`brew-rust untap user/repo` removes tap",
         "Shows warning if formulae are installed from tap"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full untap command implementation with formula checking, --force, --quiet, --verbose flags. Output matches brew exactly."
     },
     {
       "id": "cmd-023",

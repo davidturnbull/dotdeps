@@ -955,3 +955,42 @@ All tap behaviors tested and match brew output:
 ### Notes
 - --force, --custom-remote, --repair, --eval-all flags parsed but some not fully implemented
 - Next priority: cmd-022 (untap command) - the companion to tap
+## Iteration 28 - 2026-01-23
+
+### Completed Tasks
+- **cmd-022**: Implement untap command
+
+### Key Decisions
+- Untap removes tap directory from Library/Taps/user/homebrew-repo
+- Checks for installed formulae by scanning opt directory for matching names
+- Reads formula names from tap's Formula/*.rb files
+- Refuses to untap if formulae are installed (unless --force flag)
+- Shows warning message when --force is used with installed formulae
+- Counts formulae and calculates directory size before removal
+- Supports --quiet (silent), --verbose (shows directory path), --force, --debug flags
+- Error message for non-existent tap: "No available tap {name}"
+
+### Files Changed
+- `src/commands/untap.rs` - NEW: Complete untap command implementation
+- `src/commands/mod.rs` - Added untap module
+- `src/main.rs` - Added untap command dispatch
+- `src/commands/list_commands.rs` - Added untap to builtin commands
+- `.ralph/prd.json` - Marked cmd-022 as passing
+
+### Verification
+All untap behaviors tested and match brew output:
+- `brew-rust untap anomalyco/tap` removes tap ✓
+- `brew-rust untap anomalyco/tap` (with installed formula) shows error ✓
+- `brew-rust untap --force anomalyco/tap` shows warning and removes ✓
+- `brew-rust untap --quiet anomalyco/tap` runs silently ✓
+- `brew-rust untap --verbose anomalyco/tap` shows directory path ✓
+- `brew-rust untap nonexistent/tap` shows error ✓
+- `brew-rust untap --help` shows help text ✓
+- Output format matches brew exactly ✓
+- Error messages match brew ✓
+
+### Notes
+- Untap command completes the tap/untap pair of commands
+- All acceptance criteria met
+- Next priority: Additional Priority 2 commands (doctor) or Priority 3 commands (reinstall, uses, leaves, autoremove, desc, home, log, cat, options)
+

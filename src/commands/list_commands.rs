@@ -28,6 +28,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "uninstall",
     "unlink",
     "unpin",
+    "untap",
     "update",
     "upgrade",
 ];

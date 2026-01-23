@@ -20,6 +20,7 @@ pub mod taps;
 pub mod uninstall;
 pub mod unlink;
 pub mod unpin;
+pub mod untap;
 pub mod update;
 pub mod upgrade;
 pub mod version;

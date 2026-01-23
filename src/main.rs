@@ -100,6 +100,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
                 Err("tap command failed".into())
             }
         }
+        "untap" => commands::untap::run(args).map_err(|e| e.into()),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

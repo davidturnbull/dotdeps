@@ -106,6 +106,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "unpin" => commands::unpin::run(args),
         "cleanup" => commands::cleanup::run(args),
         "doctor" => commands::doctor::DoctorCommand.run(args),
+        "docs" => commands::docs::execute(args),
         "reinstall" => commands::reinstall::run(args),
         "tab" => commands::tab_cmd::execute(args),
         "tap" => {

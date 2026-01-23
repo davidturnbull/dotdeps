@@ -13,6 +13,7 @@ pub mod completions;
 pub mod config;
 pub mod deps;
 pub mod desc;
+pub mod docs;
 pub mod doctor;
 pub mod env;
 pub mod formula;

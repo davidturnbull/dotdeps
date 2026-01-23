@@ -862,3 +862,37 @@
 - Commit the update-reset command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 20 - 2026-01-24
+
+### Task: Implement docs command (cmd-045)
+
+**Completed:**
+- Researched brew docs behavior (opens https://docs.brew.sh in browser)
+- Created src/commands/docs.rs with browser opening functionality
+- Implemented using macOS 'open' command to launch default browser
+- Added docs module to src/commands/mod.rs
+- Added docs dispatch to main.rs
+- Tested command successfully opens documentation URL
+
+**Key Decisions:**
+- Use macOS 'open' command to launch default browser
+- Hard-code HOMEBREW_DOCS_WWW constant as "https://docs.brew.sh"
+- No arguments needed - command simply opens the documentation URL
+- Return error if browser fails to open
+
+**Testing:**
+- ✅ `brew-rust docs` successfully opens https://docs.brew.sh in browser
+- ✅ Command exits successfully after launching browser
+- ✅ Behavior matches `brew docs` exactly
+
+**Files Changed:**
+- src/commands/docs.rs (created)
+- src/commands/mod.rs (added docs module)
+- src/main.rs (added docs dispatch)
+- .ralph/prd.json (marked cmd-045 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the docs command implementation
+- Choose next highest priority unimplemented command
+

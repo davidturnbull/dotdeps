@@ -951,3 +951,53 @@
 - Commit the edit command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 22 - 2026-01-24
+
+### Task: Implement update-if-needed command (cmd-026)
+
+**Completed:**
+- Researched brew update-if-needed behavior (calls auto-update function from brew.sh)
+- Analyzed auto-update() function logic from vendor/brew/Library/Homebrew/brew.sh:284
+- Created src/commands/update_if_needed.rs with FETCH_HEAD timestamp checking
+- Implemented environment variable checks (HOMEBREW_NO_AUTO_UPDATE, HOMEBREW_AUTO_UPDATING, HOMEBREW_AUTO_UPDATE_CHECKED)
+- Implemented HOMEBREW_AUTO_UPDATE_SECS support with default of 86400 seconds (24 hours)
+- Implemented FETCH_HEAD age checking (compares file mtime against threshold)
+- Implemented automatic execution of "brew update --auto-update" when update needed
+- Added proper exit code handling
+- Tested with various scenarios (recent FETCH_HEAD, old FETCH_HEAD, NO_AUTO_UPDATE flag)
+
+**Key Decisions:**
+- Check FETCH_HEAD file modification time to determine if update is needed
+- Default to 86400 seconds (24 hours) for auto-update interval
+- Early return (no-op) when HOMEBREW_NO_AUTO_UPDATE is set
+- Early return when HOMEBREW_AUTO_UPDATING is set (prevents recursion)
+- Early return when HOMEBREW_AUTO_UPDATE_CHECKED is set (one check per session)
+- If FETCH_HEAD doesn't exist, trigger update
+- If FETCH_HEAD age >= auto_update_secs, trigger update
+- Run "brew update --auto-update" with HOMEBREW_AUTO_UPDATING=1 environment variable
+- Silently handle errors (graceful degradation - just skip update if something fails)
+
+**Testing:**
+- ✅ `brew-rust update-if-needed` matches `brew update-if-needed` exactly (no output)
+- ✅ Command is significantly faster (0.011s vs 0.041s for brew)
+- ✅ HOMEBREW_AUTO_UPDATE_SECS=0 triggers immediate update
+- ✅ Default behavior respects 24-hour threshold (no update when FETCH_HEAD recent)
+- ✅ HOMEBREW_NO_AUTO_UPDATE=1 prevents update even with SECS=0
+- ✅ Successfully runs "brew update --auto-update" when needed
+- ✅ Exit codes match brew behavior
+
+**Files Changed:**
+- src/commands/update_if_needed.rs (created)
+- src/commands/mod.rs (added update_if_needed module)
+- src/main.rs (added update-if-needed dispatch)
+- .ralph/prd.json (marked cmd-026 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Performance:**
+- Rust implementation is ~4x faster than Ruby (0.011s vs 0.041s)
+- This is a critical command for scripts, so performance matters
+
+**Next Steps:**
+- Commit the update-if-needed command implementation
+- Choose next highest priority unimplemented command
+

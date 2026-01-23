@@ -51,6 +51,7 @@ pub mod unlink;
 pub mod unpin;
 pub mod untap;
 pub mod update;
+pub mod update_if_needed;
 pub mod update_reset;
 pub mod upgrade;
 pub mod uses;

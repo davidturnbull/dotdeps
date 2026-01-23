@@ -5,6 +5,7 @@ mod download;
 mod formula;
 mod install;
 mod paths;
+mod settings;
 mod system;
 mod tap;
 
@@ -78,6 +79,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "--env" => commands::env::EnvCommand.run(args),
         "help" | "--help" | "-h" | "-?" => commands::help::Help.run(args),
         "alias" => commands::alias::AliasCommand.run(args),
+        "analytics" => commands::analytics::execute(args),
         "commands" => commands::list_commands::Commands.run(args),
         "config" => commands::config::Config.run(args),
         "list" => commands::list::ListCommand.run(args),

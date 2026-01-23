@@ -44,7 +44,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew analytics behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-004",

@@ -8,6 +8,7 @@ pub mod doctor;
 pub mod help;
 pub mod info;
 pub mod install;
+pub mod leaves;
 pub mod link;
 pub mod list;
 pub mod list_commands;

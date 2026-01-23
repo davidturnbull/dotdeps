@@ -636,7 +636,8 @@
       "acceptance": [
         "`brew-rust leaves` lists leaf formulae"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full implementation with --installed-on-request and --installed-as-dependency flags. Correctly handles formula and cask dependencies by scanning Caskroom metadata. Uses Cellar as source of truth for canonical formula names, shows tap prefix for non-core taps (not homebrew/core or homebrew/cask)."
     },
     {
       "id": "cmd-029",

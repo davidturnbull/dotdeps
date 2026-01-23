@@ -185,7 +185,8 @@
       "acceptance": [
         "Can parse and represent a simple formula like wget"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Uses Homebrew's API cache (formula.jws.json) instead of parsing Ruby files. All standard fields supported including dependencies, bottles, versions, keg_only, deprecation, etc."
     },
     {
       "id": "arch-004",

@@ -60,9 +60,96 @@ pub struct Versions {
 pub struct FormulaInfo {
     pub name: String,
     pub full_name: String,
+    pub tap: String,
+    #[serde(default)]
+    pub aliases: Vec<String>,
+    #[serde(default)]
+    pub versioned_formulae: Vec<String>,
+    pub desc: Option<String>,
+    pub license: Option<String>,
+    pub homepage: Option<String>,
     pub versions: Versions,
-    pub bottle: Option<Bottle>,
     pub urls: Option<Urls>,
+    pub revision: i32,
+    pub version_scheme: i32,
+    pub bottle: Option<Bottle>,
+    #[serde(default)]
+    pub keg_only: bool,
+    pub keg_only_reason: Option<KegOnlyReason>,
+    #[serde(default)]
+    pub options: Vec<String>,
+    #[serde(default)]
+    pub build_dependencies: Vec<String>,
+    #[serde(default)]
+    pub dependencies: Vec<String>,
+    #[serde(default)]
+    pub test_dependencies: Vec<String>,
+    #[serde(default)]
+    pub recommended_dependencies: Vec<String>,
+    #[serde(default)]
+    pub optional_dependencies: Vec<String>,
+    #[serde(default)]
+    pub requirements: Vec<Requirement>,
+    pub caveats: Option<String>,
+    #[serde(default)]
+    pub installed: Vec<InstalledVersion>,
+    pub linked_keg: Option<String>,
+    #[serde(default)]
+    pub pinned: bool,
+    #[serde(default)]
+    pub outdated: bool,
+    #[serde(default)]
+    pub deprecated: bool,
+    pub deprecation_date: Option<String>,
+    pub deprecation_reason: Option<String>,
+    #[serde(default)]
+    pub disabled: bool,
+    pub disable_date: Option<String>,
+    pub disable_reason: Option<String>,
+}
+
+/// Keg-only reason information.
+#[derive(Debug, Deserialize)]
+pub struct KegOnlyReason {
+    pub reason: String,
+    pub explanation: Option<String>,
+}
+
+/// Requirement specification.
+#[derive(Debug, Deserialize)]
+pub struct Requirement {
+    pub name: String,
+    #[serde(default)]
+    pub cask: Option<String>,
+    #[serde(default)]
+    pub download: Option<String>,
+    #[serde(default)]
+    pub version: Option<String>,
+    #[serde(default)]
+    pub contexts: Vec<String>,
+}
+
+/// Installed version information.
+#[derive(Debug, Deserialize)]
+pub struct InstalledVersion {
+    pub version: String,
+    pub used_options: Vec<String>,
+    pub built_as_bottle: bool,
+    pub poured_from_bottle: bool,
+    pub time: Option<i64>,
+    pub runtime_dependencies: Vec<RuntimeDependency>,
+    pub installed_as_dependency: bool,
+    pub installed_on_request: bool,
+}
+
+/// Runtime dependency information.
+#[derive(Debug, Deserialize)]
+pub struct RuntimeDependency {
+    pub full_name: String,
+    pub version: String,
+    pub revision: i32,
+    pub pkg_version: String,
+    pub declared_directly: bool,
 }
 
 /// Cask URL variations for different platforms.
@@ -257,10 +344,32 @@ fn clone_formula_info(info: &FormulaInfo) -> FormulaInfo {
     FormulaInfo {
         name: info.name.clone(),
         full_name: info.full_name.clone(),
+        tap: info.tap.clone(),
+        aliases: info.aliases.clone(),
+        versioned_formulae: info.versioned_formulae.clone(),
+        desc: info.desc.clone(),
+        license: info.license.clone(),
+        homepage: info.homepage.clone(),
         versions: Versions {
             stable: info.versions.stable.clone(),
             head: info.versions.head.clone(),
         },
+        urls: info.urls.as_ref().map(|u| Urls {
+            stable: u.stable.as_ref().map(|s| UrlSpec {
+                url: s.url.clone(),
+                checksum: s.checksum.clone(),
+                tag: s.tag.clone(),
+                revision: s.revision.clone(),
+            }),
+            head: u.head.as_ref().map(|h| UrlSpec {
+                url: h.url.clone(),
+                checksum: h.checksum.clone(),
+                tag: h.tag.clone(),
+                revision: h.revision.clone(),
+            }),
+        }),
+        revision: info.revision,
+        version_scheme: info.version_scheme,
         bottle: info.bottle.as_ref().map(|b| Bottle {
             stable: b.stable.as_ref().map(|s| BottleSpec {
                 rebuild: s.rebuild,
@@ -281,20 +390,62 @@ fn clone_formula_info(info: &FormulaInfo) -> FormulaInfo {
                     .collect(),
             }),
         }),
-        urls: info.urls.as_ref().map(|u| Urls {
-            stable: u.stable.as_ref().map(|s| UrlSpec {
-                url: s.url.clone(),
-                checksum: s.checksum.clone(),
-                tag: s.tag.clone(),
-                revision: s.revision.clone(),
-            }),
-            head: u.head.as_ref().map(|h| UrlSpec {
-                url: h.url.clone(),
-                checksum: h.checksum.clone(),
-                tag: h.tag.clone(),
-                revision: h.revision.clone(),
-            }),
+        keg_only: info.keg_only,
+        keg_only_reason: info.keg_only_reason.as_ref().map(|r| KegOnlyReason {
+            reason: r.reason.clone(),
+            explanation: r.explanation.clone(),
         }),
+        options: info.options.clone(),
+        build_dependencies: info.build_dependencies.clone(),
+        dependencies: info.dependencies.clone(),
+        test_dependencies: info.test_dependencies.clone(),
+        recommended_dependencies: info.recommended_dependencies.clone(),
+        optional_dependencies: info.optional_dependencies.clone(),
+        requirements: info
+            .requirements
+            .iter()
+            .map(|r| Requirement {
+                name: r.name.clone(),
+                cask: r.cask.clone(),
+                download: r.download.clone(),
+                version: r.version.clone(),
+                contexts: r.contexts.clone(),
+            })
+            .collect(),
+        caveats: info.caveats.clone(),
+        installed: info
+            .installed
+            .iter()
+            .map(|i| InstalledVersion {
+                version: i.version.clone(),
+                used_options: i.used_options.clone(),
+                built_as_bottle: i.built_as_bottle,
+                poured_from_bottle: i.poured_from_bottle,
+                time: i.time,
+                runtime_dependencies: i
+                    .runtime_dependencies
+                    .iter()
+                    .map(|d| RuntimeDependency {
+                        full_name: d.full_name.clone(),
+                        version: d.version.clone(),
+                        revision: d.revision,
+                        pkg_version: d.pkg_version.clone(),
+                        declared_directly: d.declared_directly,
+                    })
+                    .collect(),
+                installed_as_dependency: i.installed_as_dependency,
+                installed_on_request: i.installed_on_request,
+            })
+            .collect(),
+        linked_keg: info.linked_keg.clone(),
+        pinned: info.pinned,
+        outdated: info.outdated,
+        deprecated: info.deprecated,
+        deprecation_date: info.deprecation_date.clone(),
+        deprecation_reason: info.deprecation_reason.clone(),
+        disabled: info.disabled,
+        disable_date: info.disable_date.clone(),
+        disable_reason: info.disable_reason.clone(),
     }
 }
 

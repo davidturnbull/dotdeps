@@ -240,3 +240,40 @@ All commands behaviors tested and match `brew` output pattern:
 - Metal Toolchain detection not implemented
 - Next priority: higher-priority architectural tasks or more functional commands
 
+## Iteration 9 - 2026-01-23
+
+### Completed Tasks
+- **arch-003**: Formula parsing and representation
+
+### Key Decisions
+- Extended FormulaInfo struct with comprehensive fields matching brew JSON API
+- Added support for all standard formula metadata: desc, license, homepage, tap
+- Added dependency tracking: dependencies, build_dependencies, test_dependencies, optional_dependencies, recommended_dependencies
+- Added version and bottle information with full platform support
+- Added installation tracking: installed versions, linked_keg, pinned, outdated
+- Added deprecation/disable status fields
+- Added keg_only support with reason/explanation
+- Added requirements and caveats fields
+- Uses existing API cache parser (formula.jws.json) instead of Ruby file parsing
+- Created lib.rs to expose modules for testing
+
+### Files Changed
+- `src/api.rs` - Expanded FormulaInfo struct with ~30 new fields, added supporting structs (KegOnlyReason, Requirement, InstalledVersion, RuntimeDependency), updated clone_formula_info helper
+- `src/lib.rs` - NEW: Library exports for public API access
+- `Cargo.toml` - Temporarily added test_formula binary (removed after testing)
+
+### Verification
+Formula parsing tested and verified:
+- `wget` formula parses correctly with all fields ✓
+- Dependencies (runtime and build) parsed correctly ✓
+- Bottle information with platform-specific files ✓
+- Version information (stable, head) ✓
+- Installation status tracking ✓
+- Output matches `brew info wget --json=v2` ✓
+
+### Notes
+- Formula data comes from Homebrew's API cache, not Ruby file parsing
+- This approach matches modern Homebrew's architecture
+- All acceptance criteria for arch-003 met
+- Next priority: arch-004 (Tap management) or functional commands that use formulas (cmd-009: list, cmd-010: info, cmd-011: search)
+

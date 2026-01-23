@@ -17,11 +17,13 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "help",
     "info",
     "list",
+    "search",
 ];
 
 /// Command aliases (only shown with --include-aliases)
 const COMMAND_ALIASES: &[&str] = &[
     "--repo", // -> --repository
+    "-S",     // -> search
     "-v",     // -> --version
     "abv",    // -> info
     "ls",     // -> list

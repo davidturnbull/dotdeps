@@ -77,6 +77,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "config" => commands::config::Config.run(args),
         "list" => commands::list::ListCommand.run(args),
         "info" => commands::info::InfoCommand.run(args),
+        "search" => commands::search::run(args),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

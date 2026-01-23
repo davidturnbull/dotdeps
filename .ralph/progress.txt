@@ -390,3 +390,43 @@ All info behaviors tested:
 - Summary statistics (info without args) not yet implemented
 - Next priority: cmd-011 (search command)
 
+## Iteration 13 - 2026-01-23
+
+### Completed Tasks
+- **cmd-011**: Implement search command
+
+### Key Decisions
+- Search uses substring matching (case-insensitive) for formula and cask names
+- Regex search supported with /pattern/ syntax
+- Description search loads full API cache and searches in both name and description fields
+- Cask results show token, display name, and description in format: `token: (Display Name) description`
+- Formula results show name and description in format: `name: description`
+- Search both formulae and casks by default; can filter with --formula or --cask flags
+- Returns exit code 1 when no results found
+- Added regex dependency to Cargo.toml
+
+### Files Changed
+- `Cargo.toml` - Added regex = "1.11" dependency
+- `src/api.rs` - Extended CaskInfo struct with name and desc fields, added load_all_formulae() and load_all_casks() helper functions
+- `src/commands/search.rs` - NEW: Full search command implementation
+- `src/commands/mod.rs` - Added search module
+- `src/main.rs` - Added search command dispatch
+- `src/commands/list_commands.rs` - Added search command and -S alias to command list
+- `.ralph/prd.json` - Marked cmd-011 as passing
+
+### Verification
+All search behaviors tested:
+- `brew-rust search wget` matches output ✓
+- `brew-rust search /^wget$/` regex search ✓
+- `brew-rust search --formula curl` formula-only ✓
+- `brew-rust search --cask curl` cask-only ✓
+- `brew-rust search --desc download` description search ✓
+- `brew-rust search nonexistent` returns error ✓
+- `brew-rust -S wget` alias works ✓
+
+### Notes
+- Search uses exact substring matching, not fuzzy matching
+- Brew's fuzzy matching (e.g., "curl" finding "carl" or "cursr") is not implemented
+- For basic substring searches, results closely match brew output
+- Next priority: Additional functional commands or install/uninstall operations
+

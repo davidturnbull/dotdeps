@@ -164,6 +164,9 @@ pub struct CaskVariation {
 pub struct CaskInfo {
     pub token: String,
     pub full_token: String,
+    #[serde(default)]
+    pub name: Vec<String>,
+    pub desc: Option<String>,
     pub version: Option<String>,
     pub url: Option<String>,
     /// Per-platform URL variations
@@ -453,6 +456,8 @@ fn clone_cask_info(info: &CaskInfo) -> CaskInfo {
     CaskInfo {
         token: info.token.clone(),
         full_token: info.full_token.clone(),
+        name: info.name.clone(),
+        desc: info.desc.clone(),
         version: info.version.clone(),
         url: info.url.clone(),
         variations: info.variations.as_ref().map(|v| {
@@ -469,4 +474,16 @@ fn clone_cask_info(info: &CaskInfo) -> CaskInfo {
                 .collect()
         }),
     }
+}
+
+/// Load all formulae from the API cache.
+pub fn load_all_formulae() -> Result<Vec<FormulaInfo>, String> {
+    let formulas = load_formula_cache()?;
+    Ok(formulas.into_values().collect())
+}
+
+/// Load all casks from the API cache.
+pub fn load_all_casks() -> Result<Vec<CaskInfo>, String> {
+    let casks = load_cask_cache()?;
+    Ok(casks.into_values().collect())
 }

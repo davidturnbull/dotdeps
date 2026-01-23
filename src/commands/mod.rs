@@ -8,6 +8,7 @@ pub mod list;
 pub mod list_commands;
 pub mod prefix;
 pub mod repository;
+pub mod search;
 pub mod taps;
 pub mod version;
 

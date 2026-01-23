@@ -255,7 +255,8 @@
       "acceptance": [
         "`brew-rust search wget` finds wget formula"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Basic search implemented with substring matching. Brew's fuzzy matching (e.g., 'curl' finding 'carl' or 'cursr') not implemented - only exact substring matches are supported."
     }
   ]
 }

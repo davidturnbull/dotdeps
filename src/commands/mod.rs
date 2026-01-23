@@ -6,6 +6,7 @@ pub mod deps;
 pub mod help;
 pub mod info;
 pub mod install;
+pub mod link;
 pub mod list;
 pub mod list_commands;
 pub mod prefix;

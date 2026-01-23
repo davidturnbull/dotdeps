@@ -652,3 +652,46 @@ All uninstall behaviors tested and match brew output:
 - Does not yet support --force with multiple versions (always removes linked version)
 - Next priority: cmd-015 (link command) and cmd-016 (unlink command)
 
+## Iteration 20 - 2026-01-23
+
+### Completed Tasks
+- **cmd-015**: Implement link command
+
+### Key Decisions
+- Created comprehensive linking logic in `src/commands/link.rs`
+- Links standard directories: bin, sbin, lib, include, share, etc, Frameworks
+- Uses walkdir for recursive directory traversal
+- Creates relative symlinks using pathdiff crate
+- Skips system files: .DS_Store, INSTALL_RECEIPT.json, .brew directory, Python .pyc/.pyo in site-packages
+- Detects already-linked kegs by checking for symlinks in bin directory
+- Supports --dry-run, --overwrite, --verbose, --force flags
+- --dry-run shows files that would be linked (or removed with --overwrite)
+- --overwrite removes conflicting files before linking
+- Error handling for conflicts (file exists without --overwrite)
+- Relative symlinks match brew's behavior exactly
+
+### Files Changed
+- `Cargo.toml` - Added walkdir and pathdiff dependencies
+- `src/commands/link.rs` - NEW: Complete link command implementation
+- `src/commands/mod.rs` - Added link module
+- `src/main.rs` - Added link command dispatch
+- `src/commands/list_commands.rs` - Added link and ln alias to command list
+- `.ralph/prd.json` - Marked cmd-015 as passing
+
+### Verification
+All link behaviors tested and match brew output:
+- `brew-rust link hello` creates 3 symlinks ✓
+- `brew-rust link --dry-run hello` shows what would be linked ✓
+- `brew-rust link hello` (already linked) shows warning ✓
+- `brew-rust link nonexistent` shows error ✓
+- `brew-rust ln hello` alias works ✓
+- `brew-rust link --overwrite hello` removes conflicts ✓
+- `brew-rust link --verbose hello` shows each symlink ✓
+- Symlink paths match brew exactly (relative paths) ✓
+- Output format matches brew ✓
+
+### Notes
+- --force flag parsed but keg-only detection not implemented (would need formula info)
+- --HEAD flag not implemented
+- Next priority: cmd-016 (unlink command)
+

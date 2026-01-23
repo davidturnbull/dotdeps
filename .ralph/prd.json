@@ -396,7 +396,8 @@
       "acceptance": [
         "`brew-rust link wget` creates symlinks for wget"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full link command implementation with --dry-run, --overwrite, --verbose flags. Creates relative symlinks from HOMEBREW_PREFIX/{bin,sbin,lib,include,share,etc,Frameworks} to Cellar files."
     },
     {
       "id": "cmd-016",

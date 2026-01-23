@@ -18,6 +18,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "help",
     "info",
     "install",
+    "link",
     "list",
     "search",
     "uninstall",
@@ -29,6 +30,7 @@ const COMMAND_ALIASES: &[&str] = &[
     "-S",     // -> search
     "-v",     // -> --version
     "abv",    // -> info
+    "ln",     // -> link
     "ls",     // -> list
     "remove", // -> uninstall
     "rm",     // -> uninstall

@@ -75,7 +75,8 @@ If no tasks exist in the tasks file:
 - ONLY WORK ON A SINGLE FEATURE per iteration.
 - Keep changes small and focused. Prefer multiple small commits over one large commit.
 - Quality over speed. Fight entropy. Leave the codebase better than you found it.
-- If all work in the spec is complete, output `<promise>COMPLETE</promise>`.
+- Once Homebrew is 100% replicated in Rust, output `<promise>COMPLETE</promise>`.
+- If you run out of tasks but haven't achieved 100% replication, add more tasks.
 
 ## Quality
 

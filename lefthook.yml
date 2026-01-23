@@ -1,0 +1,31 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.rs"
+      run: cargo fmt
+      stage_fixed: true
+
+    clippy:
+      glob: "*.rs"
+      run: cargo clippy --all-targets --all-features -- -D warnings
+      fail_text: "Clippy found warnings. Fix them before committing."
+
+    check:
+      run: cargo check --all-targets --all-features
+      fail_text: "Cargo check failed. Fix compilation errors."
+
+    test:
+      run: cargo test --all-features
+      fail_text: "Tests failed. Fix failing tests before committing."
+
+pre-push:
+  parallel: true
+  commands:
+    test:
+      run: cargo test --all-features
+      fail_text: "Tests failed. Fix failing tests before pushing."
+
+    clippy:
+      run: cargo clippy --all-targets --all-features -- -D warnings
+      fail_text: "Clippy found warnings. Fix them before pushing."

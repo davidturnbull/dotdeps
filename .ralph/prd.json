@@ -56,7 +56,7 @@
       "acceptance": [
         "`brew-rust --version` output matches `brew --version` exactly"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cmd-002",
@@ -73,7 +73,7 @@
         "`brew-rust --prefix` matches `brew --prefix`",
         "`brew-rust --prefix --unbrewed` lists same files as brew"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cmd-003",

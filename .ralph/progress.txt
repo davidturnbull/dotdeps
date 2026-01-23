@@ -46,9 +46,37 @@ All basic path commands tested and match `brew` output:
 - Unknown command error handling ✓
 
 ### Notes
-- `--prefix` with formula arguments not yet implemented
 - `--cache` with formula/cask arguments not yet implemented
 - Help for specific commands not yet implemented
 - Developer commands section in `commands` not yet implemented
+
+## Iteration 2 - 2026-01-23
+
+### Completed Tasks
+- **cmd-001**: Verified --version command matches brew output (already implemented)
+- **cmd-002**: Implement --prefix command with full feature support
+
+### Key Decisions
+- Used formula_names.txt cache file from Homebrew API to validate formula existence
+- Fallback to checking opt symlink existence when cache unavailable
+- --unbrewed implementation dynamically scans prefix subdirectories, excluding Cellar/Library/Caskroom/etc
+- Exact match to Homebrew's exclude patterns for --unbrewed
+
+### Files Changed
+- `src/commands/prefix.rs` - Full --prefix implementation with formula args, --installed, --unbrewed
+
+### Verification
+All --prefix behaviors tested and match `brew` output:
+- `brew-rust --prefix` ✓
+- `brew-rust --prefix <formula>` outputs opt prefix ✓
+- `brew-rust --prefix --installed <formula>` ✓
+- `brew-rust --prefix --installed <missing>` returns error ✓
+- `brew-rust --prefix --unbrewed` lists same files ✓
+- `brew-rust --prefix <nonexistent>` shows formula not found ✓
+- Flag conflicts (--unbrewed + --installed) handled ✓
+
+### Notes
+- Formula existence check uses API cache (~/Library/Caches/Homebrew/api/formula_names.txt)
+- Next priority: --cellar with formula arguments
 
 

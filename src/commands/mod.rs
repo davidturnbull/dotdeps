@@ -49,6 +49,7 @@ pub mod unlink;
 pub mod unpin;
 pub mod untap;
 pub mod update;
+pub mod update_reset;
 pub mod upgrade;
 pub mod uses;
 pub mod version;

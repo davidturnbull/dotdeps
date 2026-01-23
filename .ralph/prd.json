@@ -421,7 +421,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew update-reset"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-029",

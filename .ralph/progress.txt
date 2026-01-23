@@ -810,3 +810,55 @@
 - Commit the three *env-sync command implementations
 - Choose next highest priority unimplemented command
 
+## Iteration 19 - 2026-01-23
+
+### Task: Implement update-reset command (cmd-028)
+
+**Completed:**
+- Researched brew update-reset behavior (no args, specific repos, error handling)
+- Created src/commands/update_reset.rs with full git repository reset functionality
+- Implemented default behavior: reset HOMEBREW_REPOSITORY + all taps when no args provided
+- Implemented specific repository reset when paths provided
+- Added git configuration for core.autocrlf and core.symlinks
+- Implemented git fetch with --force --tags
+- Implemented git remote set-head for origin
+- Implemented git reset logic with branch detection from symbolic-ref
+- Added special handling for HOMEBREW_REPOSITORY with tag checkout (stable branch)
+- Implemented describe-cache cleanup after reset
+- Added proper error handling for non-git directories and missing remotes
+- Added warning message for repositories without remote origin
+
+**Key Decisions:**
+- When no repositories specified, default to HOMEBREW_REPOSITORY and all Library/Taps/*/*
+- Check for .git directory to validate git repositories
+- Skip repositories without remote origin with warning message
+- Configure git settings (autocrlf=false, symlinks=true) before fetch
+- For Homebrew repository: checkout stable branch from latest tag when HOMEBREW_UPDATE_TO_TAG set or when not in developer mode
+- For other repositories: checkout default branch from origin/HEAD
+- Remove .git/describe-cache directory after reset
+- Silent handling of combined flags like -dqv
+
+**Testing:**
+- ✅ `brew-rust update-reset --help` matches `brew update-reset --help` exactly
+- ✅ `brew-rust update-reset /nonexistent` shows proper error and usage
+- ✅ `brew-rust update-reset /opt/homebrew/Library/Taps/anomalyco/homebrew-tap` matches brew exactly
+- ✅ `brew-rust update-reset` (no args) resets all repositories correctly
+- ✅ Warning message shown for repos without remote origin
+- ✅ Exit code 0 on success, 1 on error
+
+**Files Changed:**
+- src/commands/update_reset.rs (created)
+- src/commands/mod.rs (added update_reset module)
+- src/main.rs (added update-reset dispatch)
+- .ralph/prd.json (marked cmd-028 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Notes:**
+- Homebrew repository branch selection follows the documented logic from update-reset.sh
+- For production Homebrew (non-developer mode), uses stable branch from latest tag
+- For developer mode or taps, uses default branch from origin/HEAD
+
+**Next Steps:**
+- Commit the update-reset command implementation
+- Choose next highest priority unimplemented command
+

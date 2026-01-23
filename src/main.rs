@@ -1,4 +1,5 @@
 mod commands;
+mod formula;
 mod paths;
 
 use std::env;

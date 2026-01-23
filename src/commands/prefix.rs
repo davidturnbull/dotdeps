@@ -1,8 +1,8 @@
 use std::fs;
-use std::path::PathBuf;
 use std::process::Command as ProcessCommand;
 
 use crate::commands::{Command, CommandResult};
+use crate::formula;
 use crate::paths;
 
 pub struct Prefix;
@@ -42,14 +42,17 @@ impl Command for Prefix {
         let mut missing_formulae = Vec::new();
 
         for formula_name in &formula_args {
+            // Normalize the formula name (strip tap prefix if present)
+            let normalized = formula::normalize_name(formula_name);
+
             // Validate formula exists
-            if !formula_exists(formula_name) {
+            if !formula::exists(formula_name) {
                 return Err(
-                    format!("No available formula with the name \"{}\".", formula_name).into(),
+                    format!("No available formula with the name \"{}\".", normalized).into(),
                 );
             }
 
-            let opt_prefix = prefix.join("opt").join(formula_name);
+            let opt_prefix = prefix.join("opt").join(normalized);
 
             if has_installed {
                 // With --installed, only output if the formula is actually installed (opt link exists)
@@ -71,32 +74,6 @@ impl Command for Prefix {
 
         Ok(())
     }
-}
-
-/// Check if a formula exists by looking up the formula names cache.
-fn formula_exists(name: &str) -> bool {
-    // Check the API cache for formula names
-    let cache_path = get_formula_names_cache_path();
-
-    if let Some(cache_path) = cache_path
-        && let Ok(contents) = fs::read_to_string(&cache_path)
-    {
-        return contents.lines().any(|line| line == name);
-    }
-
-    // Fallback: if cache doesn't exist, check if the formula is installed (opt symlink exists)
-    let opt_path = paths::homebrew_prefix().join("opt").join(name);
-    opt_path.exists()
-}
-
-/// Get the path to the formula names cache file.
-fn get_formula_names_cache_path() -> Option<PathBuf> {
-    let cache = paths::homebrew_cache();
-    let path = cache.join("api/formula_names.txt");
-    if path.exists() {
-        return Some(path);
-    }
-    None
 }
 
 /// List files in Homebrew's prefix not installed by Homebrew.

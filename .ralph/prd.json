@@ -87,7 +87,7 @@
       "acceptance": [
         "`brew-rust --cellar` matches `brew --cellar`"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cmd-004",

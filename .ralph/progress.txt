@@ -79,4 +79,31 @@ All --prefix behaviors tested and match `brew` output:
 - Formula existence check uses API cache (~/Library/Caches/Homebrew/api/formula_names.txt)
 - Next priority: --cellar with formula arguments
 
+## Iteration 3 - 2026-01-23
+
+### Completed Tasks
+- **cmd-003**: Implement --cellar command with formula arguments
+
+### Key Decisions
+- Created `src/formula.rs` module with shared formula utilities (`exists`, `normalize_name`)
+- Refactored `prefix.rs` to use shared formula module
+- Formula name normalization handles tap paths (e.g., `homebrew/core/wget` → `wget`)
+- Error message format matches brew exactly: `No available formula with the name "X".`
+
+### Files Changed
+- `src/formula.rs` - New module with formula existence and name normalization utilities
+- `src/main.rs` - Added formula module import
+- `src/commands/cellar.rs` - Full --cellar implementation with formula arguments
+- `src/commands/prefix.rs` - Refactored to use shared formula module
+
+### Verification
+All --cellar behaviors tested and match `brew` output:
+- `brew-rust --cellar` ✓
+- `brew-rust --cellar <formula>` ✓
+- `brew-rust --cellar <formula1> <formula2> <formula3>` ✓
+- `brew-rust --cellar homebrew/core/<formula>` ✓
+- `brew-rust --cellar <nonexistent>` shows error ✓
+
+### Notes
+- Next priority: --cache with formula/cask arguments (cmd-004)
 

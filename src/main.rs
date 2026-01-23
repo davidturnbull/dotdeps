@@ -132,7 +132,10 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "home" | "homepage" => commands::home::run(args).map_err(|_| "home command failed".into()),
         "log" => commands::log::LogCommand::new().run(args),
         "missing" => commands::missing::execute(args),
+        "nodenv-sync" => commands::nodenv_sync::execute(args),
         "options" => commands::options::run(args).map_err(|e| e.into()),
+        "pyenv-sync" => commands::pyenv_sync::execute(args),
+        "rbenv-sync" => commands::rbenv_sync::execute(args),
         "which-formula" => {
             commands::which_formula::execute(args);
             Ok(())

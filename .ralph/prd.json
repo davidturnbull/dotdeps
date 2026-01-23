@@ -212,7 +212,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew nodenv-sync"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-015",
@@ -240,7 +241,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew pyenv-sync"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-017",
@@ -254,7 +256,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew rbenv-sync"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-018",

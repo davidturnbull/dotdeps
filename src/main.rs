@@ -115,6 +115,8 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
             commands::edit::execute(args);
             Ok(())
         }
+        "fetch" => commands::fetch::execute(args),
+        "readall" => commands::readall::execute(args),
         "reinstall" => commands::reinstall::run(args),
         "tab" => commands::tab_cmd::execute(args),
         "tap" => {
@@ -131,6 +133,8 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "uses" => commands::uses::run(args),
         "leaves" => commands::leaves::run(args),
         "autoremove" => commands::autoremove::run(args),
+        "bottle" => commands::bottle::execute(args),
+        "bump-cask-pr" => commands::bump_cask_pr::execute(args),
         "desc" => commands::desc::run(args),
         "casks" => commands::casks::execute(args),
         "formula" => {
@@ -146,6 +150,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "options" => commands::options::run(args).map_err(|e| e.into()),
         "pyenv-sync" => commands::pyenv_sync::execute(args),
         "rbenv-sync" => commands::rbenv_sync::execute(args),
+        "test" => commands::test::execute(args),
         "which-formula" => {
             commands::which_formula::execute(args);
             Ok(())

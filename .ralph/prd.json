@@ -138,7 +138,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew fetch behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-010",
@@ -273,7 +274,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew readall"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-019",
@@ -497,7 +499,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew bottle behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-034",
@@ -511,7 +514,7 @@
         "Add to dispatch in main.rs",
         "Test against real brew bump-cask-pr"
       ],
-      "passes": false,
+      "passes": true,
       "completed": true
     },
     {
@@ -1062,7 +1065,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew test"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-074",

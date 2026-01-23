@@ -142,3 +142,24 @@ All --cache behaviors tested and match `brew` output:
 - Cask cache filename may differ from brew due to URL redirection resolution
 - Next priority: --repository with tap arguments (cmd-005)
 
+## Iteration 5 - 2026-01-23
+
+### Completed Tasks
+- **cmd-005**: Verified --repository command with tap arguments (already implemented)
+
+### Key Decisions
+- The --repository command was already implemented in iteration 1 with full tap support
+- Tap path resolution: user/repo → HOMEBREW_PREFIX/Library/Taps/user/homebrew-repo
+- Returns path even for non-existent taps (matches brew behavior)
+
+### Verification
+All --repository behaviors tested and match `brew` output:
+- `brew-rust --repository` ✓
+- `brew-rust --repository homebrew/core` ✓
+- `brew-rust --repository homebrew/cask` ✓
+- `brew-rust --repository homebrew/core homebrew/cask` ✓ (multiple taps)
+- `brew-rust --repository nonexistent/tap` ✓ (returns path, matches brew)
+
+### Notes
+- Next priority: cmd-006 (help command) or cmd-007 (commands command)
+

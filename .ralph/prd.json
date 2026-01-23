@@ -118,7 +118,7 @@
       "acceptance": [
         "`brew-rust --repository` matches `brew --repository`"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cmd-006",

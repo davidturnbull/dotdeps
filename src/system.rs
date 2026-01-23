@@ -116,3 +116,18 @@ pub fn is_macos() -> bool {
 pub fn is_linux() -> bool {
     cfg!(target_os = "linux")
 }
+
+/// Get the CPU family string (e.g., "arm64_sonoma" for ARM Mac).
+#[allow(dead_code)]
+pub fn cpu_family() -> String {
+    let arch = arch();
+    if arch == "arm64" {
+        if let Some(codename) = macos_codename() {
+            format!("arm64_{}", codename)
+        } else {
+            "arm64".to_string()
+        }
+    } else {
+        arch.to_string()
+    }
+}

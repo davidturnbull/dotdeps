@@ -12,6 +12,13 @@ You are creating a one-to-one copy of Homebrew in Rust (2024 version).
 - Contain all of the existing behaviors of Homebrew (commands, flags, etc)
 - User experience is 100% identical
 
+## IMPORTANT!
+
+- The goal is not to implement the "core" Homebrew experience.
+- The goal is to produce a 100% replica of Homebrew.
+- This is a HUGE undertaking, which is why we're approaching it in small chunks.
+- "How do you eat an Elephant?" "One bite at a time."
+
 ## Research
 
 - Your training data is out of date.

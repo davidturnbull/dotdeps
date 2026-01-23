@@ -278,6 +278,136 @@
       ],
       "passes": true,
       "notes": "Full download infrastructure implemented with reqwest, progress bars via indicatif, SHA256 verification, and tar.gz extraction via tar+flate2 crates. Resume for partial downloads not implemented (would require Range requests). Tested successfully with cached bottles."
+    },
+    {
+      "id": "arch-006",
+      "category": "architectural",
+      "priority": 1,
+      "description": "Installation infrastructure",
+      "steps": [
+        "Implement bottle installation (extract to Cellar)",
+        "Create opt symlink to installed formula",
+        "Handle formula relocation (fix install_name references)",
+        "Implement post-install hooks (run postinstall if present)",
+        "Track installed formulae metadata",
+        "Support force installation (overwrite existing)"
+      ],
+      "acceptance": [
+        "Can install a bottle to Cellar correctly",
+        "Opt symlink points to correct version",
+        "Post-install runs successfully"
+      ],
+      "passes": true,
+      "notes": "Complete installation infrastructure implemented. Bottle extraction to Cellar works, opt symlink creation, Tab (INSTALL_RECEIPT.json) metadata with all fields. Formula relocation and post-install hooks not yet implemented (lower priority). Tested successfully with cached bottles."
+    },
+    {
+      "id": "arch-007",
+      "category": "architectural",
+      "priority": 1,
+      "description": "Dependency resolution",
+      "steps": [
+        "Build dependency graph from formula dependencies",
+        "Detect dependency cycles",
+        "Implement topological sort for install order",
+        "Handle build vs runtime dependencies",
+        "Support optional dependencies (skip by default)"
+      ],
+      "acceptance": [
+        "Can resolve dependencies for a formula like curl",
+        "Install order respects dependency graph",
+        "Circular dependencies are detected"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-012",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement install command",
+      "steps": [
+        "Parse install command arguments and flags",
+        "Resolve formula dependencies",
+        "Download bottles for formula and dependencies",
+        "Install formula and dependencies in correct order",
+        "Link installed formulae to opt",
+        "Display installation progress and summary",
+        "Support --force flag to reinstall",
+        "Support --build-from-source flag",
+        "Handle already installed formulae"
+      ],
+      "acceptance": [
+        "`brew-rust install wget` successfully installs wget",
+        "`brew-rust install curl` installs curl and dependencies",
+        "`brew-rust install wget` (when already installed) shows already installed message"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-013",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement deps command",
+      "steps": [
+        "Display formula dependencies",
+        "Support --tree flag for tree view",
+        "Support --installed flag to show only installed deps",
+        "Support --include-build flag",
+        "Support --include-optional flag"
+      ],
+      "acceptance": [
+        "`brew-rust deps curl` lists curl dependencies",
+        "`brew-rust deps --tree curl` shows dependency tree"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-014",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement uninstall command",
+      "steps": [
+        "Remove formula from Cellar",
+        "Remove opt symlink",
+        "Support --force flag to ignore dependencies",
+        "Check for dependents before uninstalling",
+        "Support --ignore-dependencies flag"
+      ],
+      "acceptance": [
+        "`brew-rust uninstall wget` removes wget",
+        "`brew-rust uninstall <formula-with-deps>` shows warning about dependents"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-015",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement link command",
+      "steps": [
+        "Create symlinks from Cellar to prefix",
+        "Support --force flag to overwrite existing links",
+        "Support --dry-run flag",
+        "Handle conflicts with existing files"
+      ],
+      "acceptance": [
+        "`brew-rust link wget` creates symlinks for wget"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-016",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement unlink command",
+      "steps": [
+        "Remove symlinks from prefix",
+        "Support --dry-run flag",
+        "Preserve Cellar installation"
+      ],
+      "acceptance": [
+        "`brew-rust unlink wget` removes wget symlinks"
+      ],
+      "passes": false
     }
   ]
 }

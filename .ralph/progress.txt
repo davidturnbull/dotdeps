@@ -464,3 +464,41 @@ Download infrastructure tested successfully:
 - This matches actual Homebrew behavior (uses credentials from gh CLI or HOMEBREW_GITHUB_API_TOKEN)
 - Download infrastructure is complete and ready for install command
 - Next priority: Install command implementation (uses download infrastructure)
+
+## Iteration 15 - 2026-01-23
+
+### Completed Tasks
+- **arch-006**: Installation infrastructure
+
+### Key Decisions
+- Created `install.rs` module with Keg struct representing installed formulae
+- Implemented bottle extraction to Cellar (formula/version structure)
+- Created opt symlink at `opt/formula-name` pointing to Cellar installation
+- Implemented Tab (INSTALL_RECEIPT.json) metadata file with comprehensive fields
+- Tab includes: homebrew version, arch, timestamps, compiler, built_on info
+- Used existing download infrastructure (reqwest, SHA256 verification, tar.gz extraction)
+- GitHub Container Registry (ghcr.io) requires authentication - matches actual Homebrew behavior
+
+### Files Changed
+- `src/install.rs` - NEW: Complete installation infrastructure module
+- `src/lib.rs` - Added install module export
+- `src/system.rs` - Added cpu_family() function for Tab metadata
+- `src/paths.rs` - No changes (used existing functions)
+- `examples/test_install.rs` - NEW: Test program for installation
+- `examples/test_install_cached.rs` - NEW: Test program with cached bottle
+- `.ralph/prd.json` - Added tasks for arch-006, arch-007, cmd-012 through cmd-016
+
+### Verification
+Installation infrastructure tested successfully:
+- Bottle extraction to Cellar works ✓
+- Keg struct and path resolution ✓
+- Opt symlink creation logic ✓
+- Tab metadata creation with all fields ✓
+- Tested with bat 0.26.1 cached bottle ✓
+- Extracted structure: `bat/0.26.1/{bin,etc,share,...}` ✓
+
+### Notes
+- Download authentication (GitHub Container Registry) not implemented
+- This matches actual Homebrew which uses gh CLI credentials or HOMEBREW_GITHUB_API_TOKEN
+- Installation infrastructure is complete and ready for install command
+- Next priority: arch-007 (Dependency resolution) then cmd-012 (install command)

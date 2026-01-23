@@ -3,4 +3,52 @@
 <!-- This file tracks progress across Ralph iterations -->
 <!-- Each iteration appends its completed work here -->
 
+## Iteration 1 - 2026-01-23
+
+### Completed Tasks
+- **arch-001**: Core CLI framework with command dispatching
+- **arch-002**: Homebrew paths and environment detection
+
+### Key Decisions
+- Used Rust 2024 edition
+- Created a `Command` trait for all brew commands with `name()`, `description()`, and `run()` methods
+- Implemented platform-specific path detection using `#[cfg]` attributes
+- Command aliases are resolved centrally in `resolve_alias()` matching Homebrew's `HOMEBREW_INTERNAL_COMMAND_ALIASES`
+- Used `git describe --tags` to get Homebrew version, matching actual Homebrew behavior
+
+### Files Changed
+- `Cargo.toml` - Added binary target `brew-rust`
+- `src/main.rs` - CLI entry point with command dispatching
+- `src/paths.rs` - Path detection for HOMEBREW_PREFIX, CELLAR, CACHE, etc.
+- `src/commands/mod.rs` - Command trait definition
+- `src/commands/version.rs` - --version command
+- `src/commands/prefix.rs` - --prefix command
+- `src/commands/cellar.rs` - --cellar command
+- `src/commands/cache.rs` - --cache command
+- `src/commands/repository.rs` - --repository command
+- `src/commands/caskroom.rs` - --caskroom command
+- `src/commands/taps.rs` - --taps command
+- `src/commands/help.rs` - help command
+- `src/commands/commands.rs` - commands command
+
+### Verification
+All basic path commands tested and match `brew` output:
+- `brew-rust --version` ✓
+- `brew-rust --prefix` ✓
+- `brew-rust --cellar` ✓
+- `brew-rust --cache` ✓
+- `brew-rust --repository` ✓
+- `brew-rust --caskroom` ✓
+- `brew-rust --taps` ✓
+- `brew-rust help` ✓
+- `brew-rust commands` ✓
+- Alias resolution (`-v` -> `--version`) ✓
+- Unknown command error handling ✓
+
+### Notes
+- `--prefix` with formula arguments not yet implemented
+- `--cache` with formula/cask arguments not yet implemented
+- Help for specific commands not yet implemented
+- Developer commands section in `commands` not yet implemented
+
 

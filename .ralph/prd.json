@@ -1,3 +1,255 @@
 {
-  "tasks": []
+  "tasks": [
+    {
+      "id": "arch-001",
+      "category": "architectural",
+      "priority": 1,
+      "description": "Core CLI framework with command dispatching",
+      "steps": [
+        "Create main CLI entry point that parses commands",
+        "Implement command trait/interface for all brew commands",
+        "Implement command dispatching based on first argument",
+        "Handle --help and -h flags at top level",
+        "Handle --version and -v flags at top level",
+        "Support command aliases (ls->list, rm->uninstall, etc.)"
+      ],
+      "acceptance": [
+        "Running `brew-rust --version` outputs version info",
+        "Running `brew-rust --help` outputs help text",
+        "Running `brew-rust <unknown>` shows error message",
+        "Command aliases resolve correctly"
+      ],
+      "passes": true
+    },
+    {
+      "id": "arch-002",
+      "category": "architectural",
+      "priority": 1,
+      "description": "Homebrew paths and environment detection",
+      "steps": [
+        "Detect HOMEBREW_PREFIX based on platform (macOS ARM: /opt/homebrew, macOS Intel: /usr/local, Linux: /home/linuxbrew/.linuxbrew)",
+        "Detect HOMEBREW_REPOSITORY (where Homebrew itself is installed)",
+        "Detect HOMEBREW_CELLAR path",
+        "Detect HOMEBREW_CACHE path",
+        "Detect HOMEBREW_LOGS path",
+        "Support environment variable overrides for all paths"
+      ],
+      "acceptance": [
+        "`brew-rust --prefix` matches `brew --prefix` output",
+        "`brew-rust --cellar` matches `brew --cellar` output",
+        "`brew-rust --cache` matches `brew --cache` output",
+        "`brew-rust --repository` matches `brew --repository` output"
+      ],
+      "passes": true
+    },
+    {
+      "id": "cmd-001",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement --version command",
+      "steps": [
+        "Read Homebrew version from HOMEBREW_REPOSITORY",
+        "Detect and display homebrew-core version if tapped",
+        "Detect and display homebrew-cask version if tapped",
+        "Format output exactly like brew --version"
+      ],
+      "acceptance": [
+        "`brew-rust --version` output matches `brew --version` exactly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-002",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement --prefix command",
+      "steps": [
+        "Output HOMEBREW_PREFIX when called without arguments",
+        "Implement --unbrewed flag to list unbrewed files",
+        "Implement formula argument to show formula prefix",
+        "Implement --installed flag for formula existence check"
+      ],
+      "acceptance": [
+        "`brew-rust --prefix` matches `brew --prefix`",
+        "`brew-rust --prefix --unbrewed` lists same files as brew"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-003",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement --cellar command",
+      "steps": [
+        "Output HOMEBREW_CELLAR when called without arguments",
+        "Support formula argument to show formula cellar path"
+      ],
+      "acceptance": [
+        "`brew-rust --cellar` matches `brew --cellar`"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-004",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement --cache command",
+      "steps": [
+        "Output HOMEBREW_CACHE when called without arguments",
+        "Support formula/cask arguments to show specific cache paths",
+        "Implement --os flag for simulating different OS",
+        "Implement --arch flag for simulating different architecture"
+      ],
+      "acceptance": [
+        "`brew-rust --cache` matches `brew --cache`"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-005",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement --repository command",
+      "steps": [
+        "Output HOMEBREW_REPOSITORY when called without arguments",
+        "Support tap arguments to show tap repository paths"
+      ],
+      "acceptance": [
+        "`brew-rust --repository` matches `brew --repository`"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-006",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement help command",
+      "steps": [
+        "Display usage information matching brew help output",
+        "Support help <command> to show command-specific help",
+        "Parse and display command descriptions from command definitions"
+      ],
+      "acceptance": [
+        "`brew-rust help` output matches `brew help` layout",
+        "`brew-rust help --prefix` shows prefix command help"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-007",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement commands command",
+      "steps": [
+        "List all built-in commands",
+        "Separate commands into categories (built-in, developer, external)",
+        "Support --quiet flag for minimal output"
+      ],
+      "acceptance": [
+        "`brew-rust commands` lists all implemented commands"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-008",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement config command",
+      "steps": [
+        "Display system configuration",
+        "Show HOMEBREW_* environment variables",
+        "Show macOS/Linux version info",
+        "Show CPU architecture",
+        "Show Git version",
+        "Show Ruby version"
+      ],
+      "acceptance": [
+        "`brew-rust config` shows relevant system configuration"
+      ],
+      "passes": false
+    },
+    {
+      "id": "arch-003",
+      "category": "architectural",
+      "priority": 2,
+      "description": "Formula parsing and representation",
+      "steps": [
+        "Define Formula struct with all standard fields",
+        "Parse Ruby formula files into Rust structs",
+        "Support formula bottles specification",
+        "Support formula dependencies",
+        "Handle formula versions"
+      ],
+      "acceptance": [
+        "Can parse and represent a simple formula like wget"
+      ],
+      "passes": false
+    },
+    {
+      "id": "arch-004",
+      "category": "architectural",
+      "priority": 2,
+      "description": "Tap management",
+      "steps": [
+        "Define Tap struct to represent a tap",
+        "List installed taps",
+        "Resolve tap paths",
+        "Support official taps (homebrew-core, homebrew-cask)"
+      ],
+      "acceptance": [
+        "`brew-rust --taps` lists installed taps"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-009",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement list command",
+      "steps": [
+        "List installed formulae",
+        "List installed casks with --cask flag",
+        "Support --versions flag to show versions",
+        "Support --pinned flag to show only pinned",
+        "Support formula arguments for filtering"
+      ],
+      "acceptance": [
+        "`brew-rust list` matches `brew list` output"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-010",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement info command",
+      "steps": [
+        "Display formula information",
+        "Show formula name, version, description",
+        "Show dependencies",
+        "Show installation status",
+        "Support --json flag for JSON output"
+      ],
+      "acceptance": [
+        "`brew-rust info wget` shows wget formula info"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-011",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement search command",
+      "steps": [
+        "Search for formulae by name",
+        "Support regex search with /pattern/",
+        "Search in formula descriptions with --desc",
+        "Show cask results when relevant"
+      ],
+      "acceptance": [
+        "`brew-rust search wget` finds wget formula"
+      ],
+      "passes": false
+    }
+  ]
 }

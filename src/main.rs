@@ -85,6 +85,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
             Ok(())
         }
         "command-not-found-init" => commands::command_not_found_init::execute(args),
+        "completions" => commands::completions::execute(args),
         "commands" => commands::list_commands::Commands.run(args),
         "config" => commands::config::Config.run(args),
         "list" => commands::list::ListCommand.run(args),

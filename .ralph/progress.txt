@@ -398,3 +398,55 @@
 - Commit the command-not-found-init command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 10 - 2026-01-23
+
+### Task: Implement completions command (cmd-008)
+
+**Completed:**
+- Researched brew completions behavior (manages external tap shell completion linking)
+- Created src/commands/completions.rs with full completion management
+- Implemented three subcommands: state, link, unlink
+- Implemented link_completions() to check git config homebrew.linkcompletions
+- Implemented link() to:
+  - Set linkcompletions=true in git config
+  - Scan all installed taps for completions directories
+  - Create symlinks in shell-specific directories (bash, fish, zsh)
+- Implemented unlink() to:
+  - Set linkcompletions=false in git config
+  - Remove symlinks for non-official taps only
+  - Keep official homebrew tap completions linked
+- Added comprehensive error handling and usage message
+- Handled three shell types with proper target directories:
+  - bash: share/bash-completion/completions
+  - fish: share/fish/vendor_completions.d
+  - zsh: share/zsh/site-functions
+
+**Key Decisions:**
+- Use settings::read/write for git config management (homebrew.linkcompletions)
+- Scan Library/Taps directory recursively for user/tap structure
+- When unlinking, skip official homebrew/* taps (keep them linked)
+- Create target directories if they don't exist during linking
+- Check existing symlinks before creating to avoid duplicates
+- Remove symlinks only if they point to the tap's completion files
+- Show usage message before error for invalid subcommands
+
+**Testing:**
+- ✅ `brew-rust completions` matches `brew completions` exactly
+- ✅ `brew-rust completions state` matches `brew completions state`
+- ✅ `brew-rust completions link` creates proper symlinks
+- ✅ `brew-rust completions unlink` removes tap symlinks (keeps official)
+- ✅ `brew-rust completions invalid` shows usage and error
+- ✅ Git config homebrew.linkcompletions is set correctly
+- ✅ All shell completion symlinks created/removed correctly
+
+**Files Changed:**
+- src/commands/completions.rs (created)
+- src/commands/mod.rs (added completions module)
+- src/main.rs (added completions dispatch)
+- .ralph/prd.json (marked cmd-008 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the completions command implementation
+- Choose next highest priority unimplemented command
+

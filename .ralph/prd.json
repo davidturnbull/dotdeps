@@ -121,7 +121,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew completions"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-009",

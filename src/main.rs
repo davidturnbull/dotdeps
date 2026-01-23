@@ -1,6 +1,8 @@
+mod api;
 mod commands;
 mod formula;
 mod paths;
+mod system;
 
 use std::env;
 use std::process::ExitCode;

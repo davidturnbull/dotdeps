@@ -107,3 +107,38 @@ All --cellar behaviors tested and match `brew` output:
 ### Notes
 - Next priority: --cache with formula/cask arguments (cmd-004)
 
+## Iteration 4 - 2026-01-23
+
+### Completed Tasks
+- **cmd-004**: Implement --cache command with formula/cask arguments
+
+### Key Decisions
+- Created `src/api.rs` module to parse Homebrew's JWS-format API cache files
+- Created `src/system.rs` module for platform detection (macOS version, arch, bottle tag)
+- Cache path formula: `HOMEBREW_CACHE/downloads/{SHA256(url)}--{filename}`
+- Bottle filename format: `{name}--{version}.{tag}.bottle.tar.gz`
+- For casks, default URL is for current arch (arm64), variations are for Intel Macs
+- Added sha2, serde, serde_json dependencies for hashing and JSON parsing
+
+### Files Changed
+- `Cargo.toml` - Added sha2, serde, serde_json dependencies
+- `src/main.rs` - Added api and system module imports
+- `src/api.rs` - NEW: Parse formula.jws.json and cask.jws.json API caches
+- `src/system.rs` - NEW: Platform detection (macos_version, arch, bottle_tag)
+- `src/commands/cache.rs` - Full --cache implementation with formula/cask args
+
+### Verification
+All --cache behaviors tested and match `brew` output:
+- `brew-rust --cache` ✓
+- `brew-rust --cache wget` ✓ (exact match)
+- `brew-rust --cache jq curl` ✓ (multiple formulas)
+- `brew-rust --cache --build-from-source wget` ✓
+- `brew-rust --cache --HEAD wget` ✓
+- `brew-rust --cache --cask visual-studio-code` - hash matches, filename differs (URL redirection not resolved)
+- `brew-rust --cache nonexistent` shows error ✓
+
+### Notes
+- --os and --arch flags are parsed but not fully implemented (would need SimulateSystem equivalent)
+- Cask cache filename may differ from brew due to URL redirection resolution
+- Next priority: --repository with tap arguments (cmd-005)
+

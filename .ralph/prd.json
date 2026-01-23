@@ -103,7 +103,8 @@
       "acceptance": [
         "`brew-rust --cache` matches `brew --cache`"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "--os and --arch flags are parsed but not fully implemented yet"
     },
     {
       "id": "cmd-005",

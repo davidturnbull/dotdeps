@@ -20,6 +20,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "install",
     "link",
     "list",
+    "outdated",
     "search",
     "uninstall",
     "unlink",

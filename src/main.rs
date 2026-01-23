@@ -86,6 +86,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "uninstall" => commands::uninstall::UninstallCommand.run(args),
         "link" => commands::link::LinkCommand::run(args).map_err(|_| "link command failed".into()),
         "unlink" => commands::unlink::UnlinkCommand.run(args),
+        "outdated" => commands::outdated::run(args).map_err(|e| e.into()),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

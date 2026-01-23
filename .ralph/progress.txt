@@ -734,3 +734,38 @@ All unlink behaviors tested and match brew output:
 - All acceptance criteria met
 - Next priority: Additional functional commands or advanced features
 
+## Iteration 22 - 2026-01-23
+
+### Completed Tasks
+- **cmd-019**: Implement outdated command
+
+### Key Decisions
+- Read installed versions from Cellar filesystem, not API cache (which can be stale)
+- Version comparison includes revision suffix (e.g., `2.52.0_1` = stable `2.52.0` + revision `1`)
+- Verify installation by checking opt symlink existence, not API cache `installed` field
+- JSON output format matches brew v1/v2 (field order may differ but structure identical)
+- Supports --verbose, --quiet, --json, --formula/--cask flags
+- Specific formula filtering via command arguments
+
+### Files Changed
+- `src/commands/outdated.rs` - NEW: Complete outdated command implementation
+- `src/commands/mod.rs` - Added outdated module
+- `src/main.rs` - Added outdated command dispatch
+- `src/commands/list_commands.rs` - Added outdated to command list
+- `.ralph/prd.json` - Marked cmd-019 as passing, added 18 new tasks (cmd-017 through cmd-034)
+
+### Verification
+All outdated behaviors tested and match brew output:
+- `brew-rust outdated` matches `brew outdated` ✓
+- `brew-rust outdated --verbose` matches brew ✓
+- `brew-rust outdated --quiet` matches brew ✓
+- `brew-rust outdated --json` matches brew JSON format ✓
+- `brew-rust outdated cmake` filters to specific formula ✓
+- `brew-rust outdated git` (up-to-date) shows no output ✓
+- Version comparison with revision handling correct ✓
+
+### Notes
+- Outdated command is critical foundation for upgrade command
+- Cask support not yet implemented (--cask flag parsed but ignored)
+- Next priority: Additional high-priority commands (update, upgrade, cleanup, tap, untap, doctor, pin/unpin)
+

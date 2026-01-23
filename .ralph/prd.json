@@ -414,6 +414,313 @@
       ],
       "passes": true,
       "notes": "Full unlink command implementation with --dry-run and --verbose flags. Removes symlinks from HOMEBREW_PREFIX/{bin,sbin,lib,include,share,etc,Frameworks} that point to Cellar files. Output format matches brew exactly."
+    },
+    {
+      "id": "cmd-017",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement update command",
+      "steps": [
+        "Pull latest changes from homebrew-core and homebrew-cask taps",
+        "Update Homebrew itself (if HOMEBREW_REPOSITORY is a git repo)",
+        "Show updated formulae and casks",
+        "Update API cache files (formula.jws.json, cask.jws.json)",
+        "Support --merge flag to merge changes",
+        "Support --auto-update flag"
+      ],
+      "acceptance": [
+        "`brew-rust update` pulls latest tap updates",
+        "API cache is refreshed",
+        "Shows summary of new/updated formulae"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-018",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement upgrade command",
+      "steps": [
+        "Find all installed formulae with newer versions available",
+        "Resolve dependencies for upgraded formulae",
+        "Download new bottles",
+        "Install new versions",
+        "Remove old versions (unless --keep-old specified)",
+        "Support specific formula arguments",
+        "Support --dry-run flag"
+      ],
+      "acceptance": [
+        "`brew-rust upgrade` upgrades all outdated formulae",
+        "`brew-rust upgrade wget` upgrades only wget"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-019",
+      "category": "functional",
+      "priority": 1,
+      "description": "Implement outdated command",
+      "steps": [
+        "List installed formulae",
+        "Compare installed versions with latest from API",
+        "Show formulae with newer versions available",
+        "Support --json flag for JSON output",
+        "Support --verbose flag for detailed info"
+      ],
+      "acceptance": [
+        "`brew-rust outdated` lists all outdated formulae"
+      ],
+      "passes": true,
+      "notes": "Full outdated command implementation. Reads installed versions from Cellar directory (not API cache which can be stale). Properly handles version + revision format (e.g., 2.52.0_1). Supports --verbose, --quiet, --json flags. JSON output matches brew v1/v2 format. Specific formula filtering works."
+    },
+    {
+      "id": "cmd-020",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement cleanup command",
+      "steps": [
+        "Remove old versions of installed formulae",
+        "Clean up download cache",
+        "Remove broken symlinks",
+        "Support --dry-run flag",
+        "Support -n days flag to specify age threshold",
+        "Show disk space freed"
+      ],
+      "acceptance": [
+        "`brew-rust cleanup` removes old versions",
+        "`brew-rust cleanup --dry-run` shows what would be removed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-021",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement tap command",
+      "steps": [
+        "Clone new tap repository from GitHub",
+        "Support user/repo format",
+        "Support full GitHub URLs",
+        "Create tap directory in Library/Taps",
+        "Verify tap structure after cloning",
+        "Support --force flag to overwrite existing tap"
+      ],
+      "acceptance": [
+        "`brew-rust tap user/repo` clones and installs tap",
+        "`brew-rust tap` lists installed taps"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-022",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement untap command",
+      "steps": [
+        "Remove tap repository from Library/Taps",
+        "Check for installed formulae from tap",
+        "Warn if formulae are installed from tap being removed",
+        "Support --force flag to remove despite installed formulae"
+      ],
+      "acceptance": [
+        "`brew-rust untap user/repo` removes tap",
+        "Shows warning if formulae are installed from tap"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-023",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement pin command",
+      "steps": [
+        "Create pin marker in var/homebrew/pinned",
+        "Prevent formula from being upgraded",
+        "Support multiple formula arguments",
+        "Show confirmation message"
+      ],
+      "acceptance": [
+        "`brew-rust pin wget` pins wget",
+        "`brew-rust upgrade` skips pinned formulae"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-024",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement unpin command",
+      "steps": [
+        "Remove pin marker from var/homebrew/pinned",
+        "Allow formula to be upgraded again",
+        "Support multiple formula arguments",
+        "Show confirmation message"
+      ],
+      "acceptance": [
+        "`brew-rust unpin wget` unpins wget"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-025",
+      "category": "functional",
+      "priority": 2,
+      "description": "Implement doctor command",
+      "steps": [
+        "Check for common issues in Homebrew installation",
+        "Verify directory permissions",
+        "Check for broken symlinks",
+        "Verify Git installation and configuration",
+        "Check for Xcode/CLT installation (macOS)",
+        "Report issues with suggested fixes"
+      ],
+      "acceptance": [
+        "`brew-rust doctor` runs diagnostic checks",
+        "Reports issues with clear messages"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-026",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement reinstall command",
+      "steps": [
+        "Uninstall formula (keep dependencies)",
+        "Install formula fresh",
+        "Preserve options and build flags",
+        "Support --force flag",
+        "Support --build-from-source flag"
+      ],
+      "acceptance": [
+        "`brew-rust reinstall wget` reinstalls wget"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-027",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement uses command",
+      "steps": [
+        "Show formulae that depend on specified formula",
+        "Support --installed flag to show only installed",
+        "Support --recursive flag",
+        "Support --include-build flag",
+        "Support --include-optional flag"
+      ],
+      "acceptance": [
+        "`brew-rust uses openssl` shows formulae depending on openssl"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-028",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement leaves command",
+      "steps": [
+        "List installed formulae with no dependents",
+        "Identify formulae that can be safely removed",
+        "Support --installed-on-request flag"
+      ],
+      "acceptance": [
+        "`brew-rust leaves` lists leaf formulae"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-029",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement autoremove command",
+      "steps": [
+        "Find unused dependencies",
+        "Remove formulae that were installed as dependencies but no longer needed",
+        "Support --dry-run flag",
+        "Show what will be removed before removing"
+      ],
+      "acceptance": [
+        "`brew-rust autoremove` removes unused dependencies"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-030",
+      "category": "functional",
+      "priority": 3,
+      "description": "Implement desc command",
+      "steps": [
+        "Display formula description",
+        "Support multiple formula arguments",
+        "Support --search flag to search descriptions",
+        "Support --name flag to search names"
+      ],
+      "acceptance": [
+        "`brew-rust desc wget` shows wget description"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-031",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement home command",
+      "steps": [
+        "Open formula homepage in browser",
+        "Support Homebrew homepage with no args",
+        "Support multiple formula arguments"
+      ],
+      "acceptance": [
+        "`brew-rust home wget` opens wget homepage"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-032",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement log command",
+      "steps": [
+        "Show git commit history for formula",
+        "Support tap history with no args",
+        "Support --oneline flag",
+        "Support -n <number> flag"
+      ],
+      "acceptance": [
+        "`brew-rust log wget` shows wget formula history"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-033",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement cat command",
+      "steps": [
+        "Display formula source code",
+        "Support multiple formula arguments",
+        "Find formula in taps"
+      ],
+      "acceptance": [
+        "`brew-rust cat wget` shows wget formula Ruby code"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cmd-034",
+      "category": "functional",
+      "priority": 4,
+      "description": "Implement options command",
+      "steps": [
+        "Display available options for formula",
+        "Show deprecated options",
+        "Show build options (if any)"
+      ],
+      "acceptance": [
+        "`brew-rust options wget` shows wget options"
+      ],
+      "passes": false
     }
   ]
 }

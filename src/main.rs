@@ -80,6 +80,10 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "help" | "--help" | "-h" | "-?" => commands::help::Help.run(args),
         "alias" => commands::alias::AliasCommand.run(args),
         "analytics" => commands::analytics::execute(args),
+        "command" => {
+            commands::command::execute(args);
+            Ok(())
+        }
         "commands" => commands::list_commands::Commands.run(args),
         "config" => commands::config::Config.run(args),
         "list" => commands::list::ListCommand.run(args),

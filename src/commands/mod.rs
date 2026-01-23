@@ -7,6 +7,7 @@ pub mod casks;
 pub mod cat;
 pub mod cellar;
 pub mod cleanup;
+pub mod command;
 pub mod config;
 pub mod deps;
 pub mod desc;

@@ -188,3 +188,28 @@ All help behaviors tested and match `brew` output:
 - Help text is embedded as static strings (not dynamically parsed from Ruby)
 - Next priority: cmd-007 (commands command) or arch-003 (formula parsing)
 
+## Iteration 7 - 2026-01-23
+
+### Completed Tasks
+- **cmd-007**: Implement commands command with --quiet and --include-aliases
+
+### Key Decisions
+- Added --include-aliases flag (requires --quiet, matching brew behavior)
+- Aliases are sorted with regular commands when --include-aliases is used
+- Only lists implemented commands (not all brew commands)
+
+### Files Changed
+- `src/commands/list_commands.rs` - Added --include-aliases support
+
+### Verification
+All commands behaviors tested and match `brew` output pattern:
+- `brew-rust commands` ✓
+- `brew-rust commands --quiet` ✓
+- `brew-rust commands --include-aliases` shows error ✓
+- `brew-rust commands --quiet --include-aliases` ✓
+
+### Notes
+- Developer commands section not yet implemented
+- External commands section not yet implemented
+- Next priority: cmd-008 (config command)
+

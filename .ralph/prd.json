@@ -149,7 +149,8 @@
       "acceptance": [
         "`brew-rust commands` lists all implemented commands"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "--include-aliases now works, developer/external commands sections not yet implemented"
     },
     {
       "id": "cmd-008",

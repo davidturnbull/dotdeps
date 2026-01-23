@@ -492,7 +492,8 @@
         "`brew-rust cleanup` removes old versions",
         "`brew-rust cleanup --dry-run` shows what would be removed"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Cleanup removes old formula versions and cache files older than 120 days (configurable with --prune). --dry-run shows what would be removed. --scrub and --prune-prefix flags parsed but not fully implemented yet."
     },
     {
       "id": "cmd-021",

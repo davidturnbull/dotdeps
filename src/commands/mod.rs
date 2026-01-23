@@ -1,6 +1,7 @@
 pub mod cache;
 pub mod caskroom;
 pub mod cellar;
+pub mod cleanup;
 pub mod config;
 pub mod deps;
 pub mod help;

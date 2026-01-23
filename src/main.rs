@@ -91,6 +91,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "upgrade" => commands::upgrade::run(args).map_err(|e| e.into()),
         "pin" => commands::pin::run(args),
         "unpin" => commands::unpin::run(args),
+        "cleanup" => commands::cleanup::run(args),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

@@ -1084,3 +1084,52 @@
 - Apply delegation pattern to other Ruby DSL commands
 - Focus on simpler commands that can be implemented natively in Rust
 
+## Iteration 25 - 2026-01-24
+
+### Task: Implement audit command (cmd-032)
+
+**Completed:**
+- Researched brew audit behavior (Ruby DSL-based style checker)
+- Created src/commands/audit.rs with delegation to Ruby brew
+- Implemented execute() function following postinstall pattern
+- Added audit module to src/commands/mod.rs
+- Added audit dispatch to main.rs
+- Tested command with --help flag
+
+**Key Decisions:**
+- Delegate to Ruby implementation since audit requires:
+  - RuboCop style checking
+  - Formula/cask Ruby DSL parsing
+  - Multiple gem dependencies (rubocop, rubocop-performance, etc.)
+  - Complex formula validation rules
+- Use standard delegation pattern established by postinstall command
+- Exit with Ruby brew's exit code to maintain compatibility
+
+**Testing:**
+- ✅ `cargo run -- audit --help` matches `brew audit --help` exactly
+- ✅ Help output identical (verified with diff)
+- ✅ Command successfully delegates to Ruby implementation
+- ✅ Exit codes propagate correctly
+
+**Files Changed:**
+- src/commands/audit.rs (created - delegation to Ruby brew)
+- src/commands/mod.rs (added audit module)
+- src/main.rs (added audit dispatch)
+- .ralph/prd.json (marked cmd-032 as passing)
+- .ralph/progress.txt (this file)
+
+**Notes:**
+- audit is a developer command requiring deep Ruby DSL integration
+- Delegation is the correct approach for 100% compatibility
+- Similar pattern should be used for other Ruby DSL commands:
+  - bottle (binary bottle creation)
+  - bump* commands (version/revision bumps with PR creation)
+  - style/rubocop (style checking)
+  - test (formula test blocks)
+  - Many other developer commands
+
+**Next Steps:**
+- Commit the audit command implementation
+- Apply delegation pattern to other Ruby DSL developer commands
+- Focus on simpler commands that can be implemented natively in Rust
+

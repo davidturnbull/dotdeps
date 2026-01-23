@@ -1,5 +1,6 @@
 pub mod alias;
 pub mod analytics;
+pub mod audit;
 pub mod autoremove;
 pub mod cache;
 pub mod caskroom;

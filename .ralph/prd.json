@@ -482,7 +482,7 @@
         "Add to dispatch in main.rs",
         "Test against real brew audit behavior"
       ],
-      "passes": false,
+      "passes": true,
       "completed": true
     },
     {

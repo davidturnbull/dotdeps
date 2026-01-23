@@ -16,6 +16,7 @@ pub mod leaves;
 pub mod link;
 pub mod list;
 pub mod list_commands;
+pub mod log;
 pub mod outdated;
 pub mod pin;
 pub mod prefix;

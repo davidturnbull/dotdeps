@@ -109,6 +109,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "desc" => commands::desc::run(args),
         "cat" => commands::cat::run(args).map_err(|_| "cat command failed".into()),
         "home" | "homepage" => commands::home::run(args).map_err(|_| "home command failed".into()),
+        "log" => commands::log::LogCommand::new().run(args),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

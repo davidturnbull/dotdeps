@@ -703,7 +703,8 @@
       "acceptance": [
         "`brew-rust log wget` shows wget formula history"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full log command implementation. Shows git log for formula files in taps or Homebrew repository. All flags supported: --oneline, -1, -n, --patch, --stat. Searches all taps for formula files. Output matches brew exactly."
     },
     {
       "id": "cmd-033",

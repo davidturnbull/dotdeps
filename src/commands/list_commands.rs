@@ -27,6 +27,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "leaves",
     "link",
     "list",
+    "log",
     "outdated",
     "pin",
     "reinstall",

@@ -1309,3 +1309,40 @@ All home behaviors tested and work correctly:
 - All acceptance criteria met
 - Browser opening tested manually (works correctly)
 - Next priority: Remaining Priority 4 commands (log, options) or declare near-completion
+## Iteration 37 - 2026-01-23
+
+### Completed Tasks
+- **cmd-032**: Implement log command
+
+### Key Decisions
+- Log command shows git log for formula/cask files or Homebrew repository
+- Uses git log directly with formula file path in tap directory
+- No arguments shows Homebrew repository log
+- Formula arguments show git log for formula file in tap
+- Searches all taps for formula files (Formula/*.rb, Casks/*.rb)
+- Supports subdirectory structure (Formula/a/axe.rb)
+- Full tap path support (user/repo/formula)
+- All git log flags passed through: --oneline, -1, -n, --patch, --stat
+
+### Files Changed
+- `src/commands/log.rs` - NEW: Complete log command implementation
+- `src/commands/mod.rs` - Added log module
+- `src/main.rs` - Added log command dispatch
+- `src/commands/list_commands.rs` - Added log to builtin commands
+- `.ralph/prd.json` - Marked cmd-032 as passing
+
+### Verification
+All log behaviors tested and match brew output:
+- `brew-rust log --help` shows help text ✓
+- `brew-rust log --oneline -n 5` shows Homebrew repo log ✓
+- `brew-rust log --oneline -n 3 bun` matches brew exactly ✓
+- `brew-rust log -1 bun` matches brew ✓
+- `brew-rust log -1 --patch bun` shows patch ✓
+- `brew-rust log axe` shows axe formula history ✓
+- Output format matches brew exactly ✓
+
+### Notes
+- Log command is Priority 4, now complete
+- All acceptance criteria met
+- Only remaining task is cmd-034 (options command)
+- Nearly complete implementation of Homebrew in Rust

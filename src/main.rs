@@ -92,6 +92,14 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "pin" => commands::pin::run(args),
         "unpin" => commands::unpin::run(args),
         "cleanup" => commands::cleanup::run(args),
+        "tap" => {
+            let code = commands::tap::run(args);
+            if code == std::process::ExitCode::SUCCESS {
+                Ok(())
+            } else {
+                Err("tap command failed".into())
+            }
+        }
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

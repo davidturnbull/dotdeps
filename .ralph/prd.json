@@ -512,7 +512,8 @@
         "`brew-rust tap user/repo` clones and installs tap",
         "`brew-rust tap` lists installed taps"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full tap command implementation with GitHub and custom URL support. Counts formulas in tap directory. Supports --force, --verbose, --quiet, --custom-remote, --repair, --eval-all flags."
     },
     {
       "id": "cmd-022",

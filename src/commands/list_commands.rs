@@ -24,6 +24,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "outdated",
     "pin",
     "search",
+    "tap",
     "uninstall",
     "unlink",
     "unpin",

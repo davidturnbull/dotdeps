@@ -15,6 +15,7 @@ pub mod pin;
 pub mod prefix;
 pub mod repository;
 pub mod search;
+pub mod tap;
 pub mod taps;
 pub mod uninstall;
 pub mod unlink;

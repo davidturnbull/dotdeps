@@ -1,5 +1,6 @@
 //! System detection for platform, architecture, and macOS version.
 
+use std::path::PathBuf;
 use std::process::Command;
 
 /// macOS version codenames mapped to major version numbers.
@@ -130,4 +131,80 @@ pub fn cpu_family() -> String {
     } else {
         arch.to_string()
     }
+}
+
+/// Get the macOS SDK path (e.g., "/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk").
+/// Homebrew prefers CommandLineTools SDK over Xcode SDK.
+#[cfg(target_os = "macos")]
+pub fn macos_sdk_path() -> Option<String> {
+    // Try CommandLineTools first (Homebrew's preference)
+    if let Some(major) = macos_major_version() {
+        // Try versioned SDK first
+        let versioned_sdk = format!(
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX{}.sdk",
+            major
+        );
+        if PathBuf::from(&versioned_sdk).exists() {
+            return Some(versioned_sdk);
+        }
+
+        // Try unversioned SDK
+        let unversioned_sdk = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk";
+        if PathBuf::from(unversioned_sdk).exists() {
+            return Some(unversioned_sdk.to_string());
+        }
+    }
+
+    // Fallback to xcrun if CLT SDK not found
+    if let Ok(output) = Command::new("xcrun").args(["--show-sdk-path"]).output()
+        && output.status.success()
+    {
+        let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if !path.is_empty() {
+            return Some(path);
+        }
+    }
+
+    None
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn macos_sdk_path() -> Option<String> {
+    None
+}
+
+/// Parsed macOS version with major, minor, and patch components.
+#[allow(dead_code)]
+pub struct MacOSVersion {
+    pub major: u32,
+    #[allow(dead_code)]
+    pub minor: u32,
+    #[allow(dead_code)]
+    pub patch: u32,
+}
+
+/// Parse the macOS version string into components.
+pub fn parse_macos_version(version: &str) -> Option<MacOSVersion> {
+    let parts: Vec<&str> = version.split('.').collect();
+    if parts.is_empty() {
+        return None;
+    }
+
+    let major = parts[0].parse().ok()?;
+    let minor = if parts.len() > 1 {
+        parts[1].parse().ok()?
+    } else {
+        0
+    };
+    let patch = if parts.len() > 2 {
+        parts[2].parse().ok()?
+    } else {
+        0
+    };
+
+    Some(MacOSVersion {
+        major,
+        minor,
+        patch,
+    })
 }

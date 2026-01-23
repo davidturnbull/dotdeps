@@ -12,7 +12,8 @@
         "Add to dispatch in main.rs",
         "Test output matches brew --env"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-002",

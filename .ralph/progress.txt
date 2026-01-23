@@ -32,3 +32,42 @@
 - Choose highest priority unimplemented command
 - Follow task steps: investigate → implement → test → commit
 - Update prd.json task status after completion
+
+## Iteration 2 - 2026-01-23
+
+### Task: Implement --env command (cmd-001)
+
+**Completed:**
+- Researched brew --env behavior with various flags (--plain, --shell=fish, --shell=csh)
+- Created src/commands/env.rs with full environment variable collection
+- Implemented shell-specific output formats (bash, fish, csh, rc)
+- Added support for --plain flag (colon-separated key-value pairs)
+- Implemented formula argument support (adds formula bin to PATH)
+- Fixed SDK path detection to prefer CommandLineTools over Xcode SDK
+- Added system::macos_sdk_path() and system::parse_macos_version() helpers
+- Added num_cpus dependency to Cargo.toml
+
+**Key Decisions:**
+- Homebrew prefers CommandLineTools SDK over Xcode SDK, so check CLT paths first
+- Environment variables are output in specific order matching KEYS in build_environment.rb
+- When piped without --plain flag, default to bash export format
+- Shell detection uses SHELL environment variable with bash fallback
+
+**Testing:**
+- ✅ `brew-rust --env` matches `brew --env` exactly
+- ✅ `brew-rust --env --plain` matches `brew --env --plain`
+- ✅ `brew-rust --env --shell=fish` matches `brew --env --shell=fish`
+- ✅ `brew-rust --env --shell=csh` matches `brew --env --shell=csh`
+- ✅ `brew-rust --env wget` correctly adds wget bin to PATH
+
+**Files Changed:**
+- src/commands/env.rs (created)
+- src/commands/mod.rs (added env module)
+- src/main.rs (added --env dispatch)
+- src/system.rs (added macos_sdk_path, MacOSVersion struct, parse_macos_version)
+- Cargo.toml (added num_cpus dependency)
+- .ralph/prd.json (marked cmd-001 as completed)
+
+**Next Steps:**
+- Commit the --env command implementation
+- Choose next highest priority unimplemented command

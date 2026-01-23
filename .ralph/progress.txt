@@ -695,3 +695,42 @@ All link behaviors tested and match brew output:
 - --HEAD flag not implemented
 - Next priority: cmd-016 (unlink command)
 
+## Iteration 21 - 2026-01-23
+
+### Completed Tasks
+- **cmd-016**: Implement unlink command
+
+### Key Decisions
+- Created comprehensive unlink logic that reverses the link command
+- Uses find_links() to scan standard directories for symlinks pointing to keg
+- Walks bin, sbin, lib, include, share, etc, Frameworks directories
+- Resolves relative symlinks and canonicalizes paths for accurate matching
+- Supports --dry-run (shows what would be removed), --verbose (shows each removal)
+- Preserves Cellar installation (only removes symlinks, not files)
+- Output format matches brew exactly: "Unlinking <path>... N symlink(s) removed."
+- Error message for missing keg matches brew: "No such keg: <path>"
+- Canonicalizes keg path to ensure symlink matching works correctly
+
+### Files Changed
+- `src/commands/unlink.rs` - NEW: Complete unlink command implementation
+- `src/commands/mod.rs` - Added unlink module
+- `src/main.rs` - Added unlink command dispatch
+- `src/commands/list_commands.rs` - Added unlink to command list
+- `help/unlink.txt` - NEW: Help text for unlink command
+- `.ralph/prd.json` - Marked cmd-016 as passing
+
+### Verification
+All unlink behaviors tested and match brew output:
+- `brew-rust unlink hello` removes 3 symlinks ✓
+- `brew-rust unlink --dry-run hello` shows what would be removed ✓
+- `brew-rust unlink hello` (already unlinked) shows 0 symlinks ✓
+- `brew-rust unlink --verbose hello` shows each removal ✓
+- `brew-rust unlink nonexistent` shows error ✓
+- Output format matches brew exactly ✓
+- Error messages match brew ✓
+
+### Notes
+- Unlink command completes the link/unlink pair of commands
+- All acceptance criteria met
+- Next priority: Additional functional commands or advanced features
+

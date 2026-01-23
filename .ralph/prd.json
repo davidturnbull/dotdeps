@@ -412,7 +412,8 @@
       "acceptance": [
         "`brew-rust unlink wget` removes wget symlinks"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full unlink command implementation with --dry-run and --verbose flags. Removes symlinks from HOMEBREW_PREFIX/{bin,sbin,lib,include,share,etc,Frameworks} that point to Cellar files. Output format matches brew exactly."
     }
   ]
 }

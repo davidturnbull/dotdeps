@@ -717,3 +717,47 @@
 - Commit the source command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 17 - 2026-01-23
+
+### Task: Implement tab command (cmd-023)
+
+**Completed:**
+- Researched brew tab behavior (edits installed_on_request metadata)
+- Created src/commands/tab_cmd.rs (to avoid conflict with tap module)
+- Implemented --installed-on-request and --no-installed-on-request flags
+- Implemented INSTALL_RECEIPT.json reading and writing
+- Added support for both formulae and casks
+- Implemented --formula/--formulae and --cask/--casks flags
+- Added proper error handling for non-existent formulae/casks
+- Implemented usage message matching brew format exactly
+- Added trailing newline to usage output
+
+**Key Decisions:**
+- Named module tab_cmd.rs to avoid conflict with existing tap.rs module
+- Formula receipts: ${HOMEBREW_CELLAR}/name/version/INSTALL_RECEIPT.json
+- Cask receipts: ${HOMEBREW_PREFIX}/Caskroom/name/version/.metadata/INSTALL_RECEIPT.json
+- Check current value before updating to show "already marked" vs "now marked"
+- Use std::process::exit for error cases to match brew's exact output
+- Accept but ignore -d/--debug, -q/--quiet, -v/--verbose flags
+
+**Testing:**
+- ✅ `brew-rust tab` matches `brew tab` exactly
+- ✅ `brew-rust tab wget` (no flag) shows usage and error
+- ✅ `brew-rust tab --installed-on-request wget` marks formula correctly
+- ✅ `brew-rust tab --no-installed-on-request wget` marks formula correctly
+- ✅ `brew-rust tab --installed-on-request wget git` handles multiple formulae
+- ✅ `brew-rust tab --installed-on-request nonexistent` shows proper error
+- ✅ "Already marked" vs "now marked" messages work correctly
+- ✅ Exit codes match brew (1 for errors, 0 for success)
+
+**Files Changed:**
+- src/commands/tab_cmd.rs (created)
+- src/commands/mod.rs (added tab_cmd module)
+- src/main.rs (added tab dispatch)
+- .ralph/prd.json (marked cmd-023 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the tab command implementation
+- Choose next highest priority unimplemented command
+

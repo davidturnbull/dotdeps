@@ -36,6 +36,7 @@ pub mod repository;
 pub mod search;
 pub mod shellenv;
 pub mod source;
+pub mod tab_cmd;
 pub mod tap;
 pub mod tap_info;
 pub mod taps;

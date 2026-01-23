@@ -106,6 +106,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "cleanup" => commands::cleanup::run(args),
         "doctor" => commands::doctor::DoctorCommand.run(args),
         "reinstall" => commands::reinstall::run(args),
+        "tab" => commands::tab_cmd::execute(args),
         "tap" => {
             let code = commands::tap::run(args);
             if code == std::process::ExitCode::SUCCESS {

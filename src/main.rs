@@ -3,6 +3,7 @@ mod commands;
 mod formula;
 mod paths;
 mod system;
+mod tap;
 
 use std::env;
 use std::process::ExitCode;

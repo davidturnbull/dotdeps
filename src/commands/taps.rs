@@ -1,11 +1,16 @@
 use crate::commands::{Command, CommandResult};
-use crate::paths;
+use crate::tap;
 
 pub struct Taps;
 
 impl Command for Taps {
     fn run(&self, _args: &[String]) -> CommandResult {
-        println!("{}", paths::homebrew_taps().display());
+        let taps = tap::list_installed();
+
+        for tap in taps {
+            println!("{}", tap.name());
+        }
+
         Ok(())
     }
 }

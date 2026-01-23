@@ -202,7 +202,8 @@
       "acceptance": [
         "`brew-rust --taps` lists installed taps"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full tap management with Tap struct, tap path resolution, official tap detection, and tap listing"
     },
     {
       "id": "cmd-009",

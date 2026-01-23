@@ -277,3 +277,36 @@ Formula parsing tested and verified:
 - All acceptance criteria for arch-003 met
 - Next priority: arch-004 (Tap management) or functional commands that use formulas (cmd-009: list, cmd-010: info, cmd-011: search)
 
+## Iteration 10 - 2026-01-23
+
+### Completed Tasks
+- **arch-004**: Tap management
+
+### Key Decisions
+- Created comprehensive Tap struct with user and repo fields
+- Tap names use "user/repo" format (without "homebrew-" prefix)
+- Full repository names use "homebrew-{repo}" format for filesystem paths
+- Tap paths resolved to HOMEBREW_PREFIX/Library/Taps/user/homebrew-repo
+- Automatic detection of official taps (homebrew/core, homebrew/cask)
+- Tap listing scans filesystem and strips "homebrew-" prefix for display
+- Taps sorted alphabetically for consistent output
+- Added comprehensive unit tests for tap parsing and official tap detection
+
+### Files Changed
+- `src/tap.rs` - NEW: Complete tap management module with Tap struct, list_installed(), parse(), path resolution, and unit tests
+- `src/main.rs` - Added tap module import
+- `src/lib.rs` - Added tap module export
+- `src/commands/taps.rs` - Updated to use tap::list_installed() instead of just printing path
+
+### Verification
+All tap management features tested:
+- `brew-rust --taps` matches `brew tap` output exactly ✓
+- Tap parsing with and without "homebrew-" prefix ✓
+- Official tap detection ✓
+- Tap path resolution ✓
+- Unit tests all passing ✓
+
+### Notes
+- Tap struct provides foundation for future tap commands (tap, untap)
+- Next priority: Functional commands that use formula/tap info (cmd-009: list, cmd-010: info, cmd-011: search)
+

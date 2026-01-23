@@ -717,7 +717,8 @@
       "acceptance": [
         "`brew-rust cat wget` shows wget formula Ruby code"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Displays Ruby source code from tap directories. Shows error for core formulae that don't exist on disk (API-only mode). Supports --formula/--cask flags, multiple arguments, and full tap paths."
     },
     {
       "id": "cmd-034",

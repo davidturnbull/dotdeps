@@ -1234,3 +1234,42 @@ All desc behaviors tested and match brew output:
 - Desc command is Priority 3, now complete
 - All acceptance criteria met
 - Next priority: Additional Priority 4 commands (home, log, cat, options) or finish remaining tasks
+
+## Iteration 35 - 2026-01-23
+
+### Completed Tasks
+- **cmd-033**: Implement cat command
+
+### Key Decisions
+- Cat command displays Ruby source code from tap directories
+- Searches Formula/*.rb and Casks/*.rb in all taps by default
+- Supports subdirectory structure (e.g., Formula/a/axe.rb)
+- Error message for core formulae that don't exist on disk (API-only mode)
+- Supports --formula/--cask flags to filter search
+- Multiple formula arguments print with blank line separator
+- Accepts full tap paths (user/repo/formula) or short names
+
+### Files Changed
+- `src/commands/cat.rs` - NEW: Complete cat command implementation
+- `src/commands/mod.rs` - Added cat module
+- `src/main.rs` - Added cat command dispatch
+- `src/commands/list_commands.rs` - Added cat to builtin commands
+- `.ralph/prd.json` - Marked cmd-033 as passing
+
+### Verification
+All cat behaviors tested and match brew output:
+- `brew-rust cat bun` displays bun formula ✓
+- `brew-rust cat axe` displays axe formula ✓
+- `brew-rust cat bun axe` displays both with separator ✓
+- `brew-rust cat oven-sh/bun/bun` full tap path works ✓
+- `brew-rust cat wget` shows error (API-only) ✓
+- `brew-rust cat --help` shows help text ✓
+- Output matches brew cat exactly ✓
+- Error messages match brew ✓
+
+### Notes
+- Cat command is Priority 4, now complete
+- Works with any third-party tap formulas on disk
+- Shows appropriate error for core formulae (API-only mode)
+- All acceptance criteria met
+- Next priority: Additional Priority 4 commands (home, log, options) or declare completion

@@ -1,6 +1,7 @@
 pub mod autoremove;
 pub mod cache;
 pub mod caskroom;
+pub mod cat;
 pub mod cellar;
 pub mod cleanup;
 pub mod config;

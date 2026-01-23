@@ -107,6 +107,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "leaves" => commands::leaves::run(args),
         "autoremove" => commands::autoremove::run(args),
         "desc" => commands::desc::run(args),
+        "cat" => commands::cat::run(args).map_err(|_| "cat command failed".into()),
         _ => {
             eprintln!("Error: Unknown command: brew {cmd}");
             Err("Unknown command".into())

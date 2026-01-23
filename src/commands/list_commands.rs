@@ -13,6 +13,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "--taps",
     "--version",
     "autoremove",
+    "cat",
     "cleanup",
     "commands",
     "config",

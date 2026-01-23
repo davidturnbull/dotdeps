@@ -113,6 +113,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
                 Err("tap command failed".into())
             }
         }
+        "tap-info" => commands::tap_info::execute(args),
         "untap" => commands::untap::run(args).map_err(|e| e.into()),
         "unalias" => commands::unalias::UnaliasCommand.run(args),
         "uses" => commands::uses::run(args),

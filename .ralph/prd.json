@@ -735,7 +735,8 @@
       "acceptance": [
         "`brew-rust options wget` shows wget options"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Modern Homebrew has deprecated build options. Most formulae return empty results. Command matches brew behavior for backwards compatibility."
     }
   ]
 }

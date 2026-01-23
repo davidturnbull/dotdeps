@@ -120,6 +120,10 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "autoremove" => commands::autoremove::run(args),
         "desc" => commands::desc::run(args),
         "casks" => commands::casks::execute(args),
+        "formula" => {
+            commands::formula::execute(args);
+            Ok(())
+        }
         "formulae" => commands::formulae::execute(args),
         "cat" => commands::cat::run(args).map_err(|_| "cat command failed".into()),
         "home" | "homepage" => commands::home::run(args).map_err(|_| "home command failed".into()),

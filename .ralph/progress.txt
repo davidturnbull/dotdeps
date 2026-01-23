@@ -531,3 +531,46 @@
 - Commit the unalias command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 13 - 2026-01-23
+
+### Task: Implement formula command (cmd-049)
+
+**Completed:**
+- Researched brew formula behavior (displays path to formula .rb files)
+- Created src/commands/formula.rs with formula path resolution
+- Implemented tap formula path lookup (scans Library/Taps directory)
+- Implemented fallback to opt/ for core formulae (when homebrew/core not installed)
+- Added cask detection and proper error message when only casks found
+- Implemented proper usage and error messages matching brew format
+- Added support for multiple formula arguments
+
+**Key Decisions:**
+- Search priority: tap paths first, then opt/ paths as fallback
+- For tap formulae: return Library/Taps/user/homebrew-tap/Formula/name.rb
+- For core formulae (API mode): return opt/name/.brew/name.rb
+- Check both Formula/ subdirectory and root directory in taps
+- Extract base formula name from tap-prefixed names (e.g., "user/tap/name" → "name")
+- When only casks found (no formulae), show error: "Found casks but did not find formulae!"
+- Non-existent formulae are silently skipped (no output, no error)
+
+**Testing:**
+- ✅ `brew-rust formula wget` matches `brew formula wget` exactly
+- ✅ `brew-rust formula wget git sst` matches brew (multiple formulae)
+- ✅ `brew-rust formula axe` matches brew (tap formula with Formula/ dir)
+- ✅ `brew-rust formula sst` matches brew (tap formula in root)
+- ✅ `brew-rust formula` shows usage and error (no arguments)
+- ✅ `brew-rust formula nonexistent` silently succeeds (no output)
+- ✅ `brew-rust formula aerospace` shows cask error message
+- ✅ Exit codes match brew exactly (0 for success, 1 for errors)
+
+**Files Changed:**
+- src/commands/formula.rs (created)
+- src/commands/mod.rs (added formula module)
+- src/main.rs (added formula dispatch)
+- .ralph/prd.json (marked cmd-049 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the formula command implementation
+- Choose next highest priority unimplemented command
+

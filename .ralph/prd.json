@@ -714,7 +714,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew formula"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-050",

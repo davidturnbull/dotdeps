@@ -349,3 +349,44 @@ All list behaviors tested and working:
 - Formula file listing uses ls output (not full recursive listing)
 - Next priority: cmd-010 (info command) or cmd-011 (search command)
 
+## Iteration 12 - 2026-01-23
+
+### Completed Tasks
+- **cmd-010**: Implement info command
+
+### Key Decisions
+- Display formula metadata from API cache (name, version, description, license, homepage)
+- Show installation status by checking installed versions in API cache
+- Calculate cellar path, file count, and directory size for installed versions
+- Display dependencies separated by type (build vs required)
+- Show caveats if present in formula
+- JSON output uses v2 format matching brew
+- Number formatting uses comma separators (1,733 not 1733)
+- Size calculation uses symlink_metadata to avoid following symlinks
+- Analytics display placeholder zeros (real analytics API not implemented)
+- Time formatting uses chrono to match brew's date/time format
+
+### Files Changed
+- `Cargo.toml` - Added chrono dependency
+- `src/commands/info.rs` - NEW: Full info command implementation
+- `src/commands/mod.rs` - Added info module
+- `src/main.rs` - Added info command dispatch
+- `src/commands/list_commands.rs` - Added info and abv alias to command list
+- `src/api.rs` - Added Serialize derive to all API structs for JSON output
+- `.ralph/prd.json` - Marked cmd-010 as passing
+
+### Verification
+All info behaviors tested:
+- `brew-rust info git` shows full formula info ✓
+- `brew-rust info jq` shows installed formula ✓
+- `brew-rust info --json git` outputs JSON ✓
+- `brew-rust abv git` alias works ✓
+- Installation status, dependencies, caveats, options all displayed ✓
+- File count formatting with commas ✓
+- Size calculation matches brew (using symlink_metadata) ✓
+
+### Notes
+- Analytics section shows placeholder zeros (real Homebrew analytics API not implemented)
+- Summary statistics (info without args) not yet implemented
+- Next priority: cmd-011 (search command)
+

@@ -15,6 +15,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "commands",
     "config",
     "help",
+    "info",
     "list",
 ];
 
@@ -22,6 +23,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
 const COMMAND_ALIASES: &[&str] = &[
     "--repo", // -> --repository
     "-v",     // -> --version
+    "abv",    // -> info
     "ls",     // -> list
 ];
 

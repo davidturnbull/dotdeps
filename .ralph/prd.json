@@ -238,7 +238,8 @@
       "acceptance": [
         "`brew-rust info wget` shows wget formula info"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Basic info command implemented. Shows formula info with installation status, dependencies, caveats, and options. JSON output supported with --json flag. Analytics show placeholder zeros (real analytics not implemented)."
     },
     {
       "id": "cmd-011",

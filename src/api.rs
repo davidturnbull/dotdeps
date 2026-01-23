@@ -3,7 +3,7 @@
 //! Homebrew caches formula and cask data from the API in JWS (JSON Web Signature) format.
 //! This module parses that cache to get formula information.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use crate::paths;
 
 /// Bottle file information for a specific platform/arch.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct BottleFile {
     pub cellar: String,
     pub url: String,
@@ -19,7 +19,7 @@ pub struct BottleFile {
 }
 
 /// Bottle specification for a formula.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct BottleSpec {
     pub rebuild: i32,
     pub root_url: String,
@@ -27,13 +27,13 @@ pub struct BottleSpec {
 }
 
 /// Bottle information (stable builds).
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Bottle {
     pub stable: Option<BottleSpec>,
 }
 
 /// URL specification for source downloads.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UrlSpec {
     pub url: String,
     pub checksum: Option<String>,
@@ -42,21 +42,21 @@ pub struct UrlSpec {
 }
 
 /// URLs for a formula (stable, head, etc.).
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Urls {
     pub stable: Option<UrlSpec>,
     pub head: Option<UrlSpec>,
 }
 
 /// Version information for a formula.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Versions {
     pub stable: Option<String>,
     pub head: Option<String>,
 }
 
 /// Formula data from the API.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct FormulaInfo {
     pub name: String,
     pub full_name: String,
@@ -109,14 +109,14 @@ pub struct FormulaInfo {
 }
 
 /// Keg-only reason information.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct KegOnlyReason {
     pub reason: String,
     pub explanation: Option<String>,
 }
 
 /// Requirement specification.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Requirement {
     pub name: String,
     #[serde(default)]
@@ -130,7 +130,7 @@ pub struct Requirement {
 }
 
 /// Installed version information.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InstalledVersion {
     pub version: String,
     pub used_options: Vec<String>,
@@ -143,7 +143,7 @@ pub struct InstalledVersion {
 }
 
 /// Runtime dependency information.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RuntimeDependency {
     pub full_name: String,
     pub version: String,
@@ -153,14 +153,14 @@ pub struct RuntimeDependency {
 }
 
 /// Cask URL variations for different platforms.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CaskVariation {
     pub url: Option<String>,
     pub sha256: Option<String>,
 }
 
 /// Cask data from the API.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CaskInfo {
     pub token: String,
     pub full_token: String,

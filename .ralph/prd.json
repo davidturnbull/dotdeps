@@ -134,7 +134,7 @@
         "`brew-rust help` output matches `brew help` layout",
         "`brew-rust help --prefix` shows prefix command help"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cmd-007",

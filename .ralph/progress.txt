@@ -163,3 +163,28 @@ All --repository behaviors tested and match `brew` output:
 ### Notes
 - Next priority: cmd-006 (help command) or cmd-007 (commands command)
 
+## Iteration 6 - 2026-01-23
+
+### Completed Tasks
+- **cmd-006**: Implement help command with command-specific help
+
+### Key Decisions
+- Stored help text as static string constants for implemented commands
+- Unknown commands show generic help + error message, then exit with code 1 (matching brew)
+- Help text matches brew help output exactly for all implemented commands
+
+### Files Changed
+- `src/commands/help.rs` - Full rewrite with command-specific help text
+
+### Verification
+All help behaviors tested and match `brew` output:
+- `brew-rust help` ✓
+- `brew-rust help --prefix` ✓ (exact match)
+- `brew-rust help --cache` ✓
+- `brew-rust help --version` ✓
+- `brew-rust help unknown_command` ✓ (shows help + error, exits 1)
+
+### Notes
+- Help text is embedded as static strings (not dynamically parsed from Ruby)
+- Next priority: cmd-007 (commands command) or arch-003 (formula parsing)
+

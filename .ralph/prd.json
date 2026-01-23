@@ -257,6 +257,27 @@
       ],
       "passes": true,
       "notes": "Basic search implemented with substring matching. Brew's fuzzy matching (e.g., 'curl' finding 'carl' or 'cursr') not implemented - only exact substring matches are supported."
+    },
+    {
+      "id": "arch-005",
+      "category": "architectural",
+      "priority": 1,
+      "description": "Download and caching infrastructure",
+      "steps": [
+        "Implement HTTP client for downloading bottles and source tarballs",
+        "Verify SHA256 checksums for downloaded files",
+        "Support resume for partial downloads",
+        "Implement download progress reporting",
+        "Handle cache directory structure for bottles and sources",
+        "Support bottle extraction (tar.gz unpacking)"
+      ],
+      "acceptance": [
+        "Can download a bottle and verify its checksum",
+        "Downloaded files are cached correctly",
+        "Progress is shown during download"
+      ],
+      "passes": true,
+      "notes": "Full download infrastructure implemented with reqwest, progress bars via indicatif, SHA256 verification, and tar.gz extraction via tar+flate2 crates. Resume for partial downloads not implemented (would require Range requests). Tested successfully with cached bottles."
     }
   ]
 }

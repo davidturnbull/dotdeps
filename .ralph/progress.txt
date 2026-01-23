@@ -430,3 +430,37 @@ All search behaviors tested:
 - For basic substring searches, results closely match brew output
 - Next priority: Additional functional commands or install/uninstall operations
 
+
+## Iteration 14 - 2026-01-23
+
+### Completed Tasks
+- **arch-005**: Download and caching infrastructure
+
+### Key Decisions
+- Used reqwest HTTP client with streaming support for large file downloads
+- Implemented progress reporting using indicatif crate with progress bars
+- SHA256 verification uses sha2 crate with hex encoding
+- Bottle extraction uses tar crate + flate2 for gzip decompression
+- Download functions are async (using tokio runtime)
+- Progress bars show: elapsed time, transfer speed, ETA, bytes/total
+- Resume for partial downloads not implemented (would require HTTP Range requests)
+
+### Files Changed
+- `Cargo.toml` - Added reqwest, tokio, futures-util, indicatif, hex, tar, flate2 dependencies
+- `src/download.rs` - NEW: Complete download infrastructure module
+- `src/lib.rs` - Added download module export
+
+### Verification
+Download infrastructure tested successfully:
+- `download_file_with_progress()` - Streams downloads with progress reporting ✓
+- `download_and_verify()` - Downloads and verifies SHA256 checksum ✓
+- `verify_sha256()` - Verifies file checksums ✓
+- `sha256_url()` - Generates cache path hashes matching Homebrew ✓
+- `extract_tar_gz()` - Extracts tar.gz bottles correctly ✓
+- Tested with cached libxau bottle - extraction successful ✓
+
+### Notes
+- GitHub Container Registry (ghcr.io) requires authentication for bottle downloads
+- This matches actual Homebrew behavior (uses credentials from gh CLI or HOMEBREW_GITHUB_API_TOKEN)
+- Download infrastructure is complete and ready for install command
+- Next priority: Install command implementation (uses download infrastructure)

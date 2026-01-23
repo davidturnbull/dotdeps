@@ -75,7 +75,8 @@
         "Add to dispatch in main.rs",
         "Test against real brew casks behavior"
       ],
-      "passes": false
+      "passes": true,
+      "completed": true
     },
     {
       "id": "cmd-006",

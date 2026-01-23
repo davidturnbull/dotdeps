@@ -214,3 +214,43 @@
 - Commit the shellenv command implementation
 - Choose next highest priority unimplemented command
 
+## Iteration 6 - 2026-01-23
+
+### Task: Implement casks command (cmd-005)
+
+**Completed:**
+- Researched brew casks behavior (lists all installable casks including short names)
+- Created src/commands/casks.rs with dual-source cask listing
+- Implemented API cache reading from ${HOMEBREW_CACHE}/api/cask_names.txt
+- Implemented filesystem scanning for casks in Library/Taps directories
+- Added proper tap name extraction (removes homebrew-/linuxbrew- prefix)
+- Implemented short name generation for third-party taps
+- Added walkdir-based directory traversal with proper filtering
+- Excluded .git, cmd, .github, spec, vendor directories from scan
+
+**Key Decisions:**
+- First try to read from API cache if HOMEBREW_NO_INSTALL_FROM_API not set
+- For homebrew/cask tap: output only short names (e.g., "firefox")
+- For third-party taps: output BOTH full name (user/tap/name) AND short name (name)
+- Use HashSet to deduplicate entries from API cache and filesystem
+- Sort final output alphabetically
+
+**Testing:**
+- ✅ `brew-rust casks` matches `brew casks` exactly (7544 lines)
+- ✅ Output includes all casks from API cache
+- ✅ Output includes third-party tap casks (e.g., aerospace from nikitabobko/tap)
+- ✅ Short names generated correctly for third-party casks
+- ✅ No duplicate entries in output
+- ✅ Alphabetical sorting matches brew exactly
+
+**Files Changed:**
+- src/commands/casks.rs (created)
+- src/commands/mod.rs (added casks module)
+- src/main.rs (added casks dispatch)
+- .ralph/prd.json (marked cmd-005 as completed and passing)
+- .ralph/progress.txt (this file)
+
+**Next Steps:**
+- Commit the casks command implementation
+- Choose next highest priority unimplemented command
+

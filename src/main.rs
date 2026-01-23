@@ -112,6 +112,7 @@ fn dispatch(cmd: &str, args: &[String]) -> CommandResult {
         "leaves" => commands::leaves::run(args),
         "autoremove" => commands::autoremove::run(args),
         "desc" => commands::desc::run(args),
+        "casks" => commands::casks::execute(args),
         "cat" => commands::cat::run(args).map_err(|_| "cat command failed".into()),
         "home" | "homepage" => commands::home::run(args).map_err(|_| "home command failed".into()),
         "log" => commands::log::LogCommand::new().run(args),

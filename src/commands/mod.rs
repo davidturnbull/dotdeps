@@ -3,6 +3,7 @@ pub mod analytics;
 pub mod autoremove;
 pub mod cache;
 pub mod caskroom;
+pub mod casks;
 pub mod cat;
 pub mod cellar;
 pub mod cleanup;

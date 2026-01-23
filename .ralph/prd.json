@@ -454,7 +454,8 @@
         "`brew-rust upgrade` upgrades all outdated formulae",
         "`brew-rust upgrade wget` upgrades only wget"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full upgrade command implementation with outdated formula detection, bottle download/caching, installation to Cellar, and old version cleanup. Supports --dry-run, --force, --verbose, --quiet, --build-from-source flags. Skips pinned formulae. Removes old versions after upgrade (unless --force to keep all)."
     },
     {
       "id": "cmd-019",

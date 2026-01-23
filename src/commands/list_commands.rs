@@ -25,6 +25,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "uninstall",
     "unlink",
     "update",
+    "upgrade",
 ];
 
 /// Command aliases (only shown with --include-aliases)

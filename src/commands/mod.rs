@@ -2,6 +2,7 @@ pub mod cache;
 pub mod caskroom;
 pub mod cellar;
 pub mod config;
+pub mod deps;
 pub mod help;
 pub mod info;
 pub mod install;

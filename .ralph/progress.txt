@@ -577,3 +577,40 @@ All install behaviors tested and verified:
 - Uses cached bottles from actual brew (must fetch with brew first for testing)
 - In production, would need HOMEBREW_GITHUB_API_TOKEN or gh CLI authentication
 - Next priority: cmd-013 (deps command) or cmd-014 (uninstall command)
+## Iteration 18 - 2026-01-23
+
+### Completed Tasks
+- **cmd-013**: Implement deps command
+
+### Key Decisions
+- Created deps command with both flat list and tree view modes
+- Tree view uses box-drawing characters (├── └── │) matching brew's output
+- No pruning of duplicate nodes in tree view (shows full subtree every time)
+- Depth limit of 100 levels to prevent infinite recursion in case of cycles
+- Supports --tree, --installed, --include-build, --include-optional flags
+- Warnings shown when not using --installed flag (matching brew behavior)
+- Different warning messages for --tree and --include-build flags
+
+### Files Changed
+- `src/commands/deps.rs` - NEW: Complete deps command implementation
+- `src/commands/mod.rs` - Added deps module
+- `src/main.rs` - Added deps command dispatch
+- `src/commands/list_commands.rs` - Added deps to command list
+- `.ralph/prd.json` - Marked cmd-013 as passing
+
+### Verification
+All deps behaviors tested and match brew output:
+- `brew-rust deps wget` flat list ✓
+- `brew-rust deps --tree wget` tree view ✓
+- `brew-rust deps --tree curl` complex tree ✓
+- `brew-rust deps --installed curl` installed only ✓
+- `brew-rust deps --include-build wget` build deps ✓
+- Warning messages match brew ✓
+- Tree formatting (├── └── │) matches brew exactly ✓
+
+### Notes
+- Tree view does not prune duplicate nodes (matches brew behavior)
+- Depth limit prevents infinite recursion
+- All acceptance criteria met
+- Next priority: cmd-014 (uninstall command)
+

@@ -360,7 +360,8 @@
         "`brew-rust deps curl` lists curl dependencies",
         "`brew-rust deps --tree curl` shows dependency tree"
       ],
-      "passes": false
+      "passes": true,
+      "notes": "Full deps command implementation with flat and tree views. All flags supported: --tree, --installed, --include-build, --include-optional. Tree output matches brew exactly (without pruning)."
     },
     {
       "id": "cmd-014",

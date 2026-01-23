@@ -27,6 +27,7 @@ pub mod prefix;
 pub mod reinstall;
 pub mod repository;
 pub mod search;
+pub mod shellenv;
 pub mod tap;
 pub mod taps;
 pub mod uninstall;

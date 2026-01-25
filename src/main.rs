@@ -2,6 +2,7 @@ mod cache;
 mod cli;
 mod deps;
 mod git;
+mod python;
 
 use clap::Parser;
 use cli::{Cli, Command};
@@ -42,19 +43,16 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     // Verify cache is writable (fail fast)
     cache::ensure_writable()?;
 
-    let version = spec.version.as_deref().unwrap_or_else(|| {
-        // TODO: Look up version from lockfile
-        eprintln!(
-            "Error: No version specified. Specify version explicitly: dotdeps add {}@<version>",
-            spec
-        );
-        std::process::exit(1);
-    });
+    // Resolve version: use explicit version, or look up from lockfile
+    let version = match spec.version.as_deref() {
+        Some(v) => v.to_string(),
+        None => lookup_version(spec.ecosystem, &spec.package)?,
+    };
 
-    let cache_path = cache::package_dir(spec.ecosystem, &spec.package, version)?;
+    let cache_path = cache::package_dir(spec.ecosystem, &spec.package, &version)?;
 
     // Check if already cached
-    if cache::exists(spec.ecosystem, &spec.package, version)? {
+    if cache::exists(spec.ecosystem, &spec.package, &version)? {
         println!("Using cached {} {}", spec.package, version);
     } else {
         // Detect repository URL
@@ -63,7 +61,7 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
         println!("Fetching {} {}...", spec.package, version);
 
         // Clone the repository
-        let result = git::clone(&repo_url, version, &cache_path)?;
+        let result = git::clone(&repo_url, &version, &cache_path)?;
 
         if result.used_default_branch {
             eprintln!(
@@ -76,52 +74,77 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Create symlink in .deps/
-    let link_path = deps::link(spec.ecosystem, &spec.package, version)?;
+    let link_path = deps::link(spec.ecosystem, &spec.package, &version)?;
     println!("Created {}", link_path.display());
 
     Ok(())
 }
 
+/// Look up package version from ecosystem-specific lockfile
+fn lookup_version(
+    ecosystem: cli::Ecosystem,
+    package: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    match ecosystem {
+        cli::Ecosystem::Python => python::find_version(package).map_err(|e| e.into()),
+        _ => Err(format!(
+            "No version specified. Specify version explicitly: dotdeps add {}:{}@<version>",
+            ecosystem, package
+        )
+        .into()),
+    }
+}
+
 /// Detect the repository URL for a package
-///
-/// For now, this only handles Go modules (where the package path is the repo)
-/// and returns an error for other ecosystems until task-004 implements registry lookups.
 fn detect_repo_url(
     ecosystem: cli::Ecosystem,
     package: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     match ecosystem {
-        cli::Ecosystem::Go => {
-            // Go modules: package path is typically the repo
-            // e.g., github.com/gin-gonic/gin -> https://github.com/gin-gonic/gin
-            if package.starts_with("github.com/") {
-                // Strip any version suffix like /v2
-                let repo_path = package
-                    .strip_suffix("/v2")
-                    .or_else(|| package.strip_suffix("/v3"))
-                    .or_else(|| package.strip_suffix("/v4"))
-                    .or_else(|| package.strip_suffix("/v5"))
-                    .unwrap_or(package);
-                Ok(format!("https://{}.git", repo_path))
-            } else if package.starts_with("golang.org/x/") {
-                // golang.org/x/* -> go.googlesource.com/[name]
-                let name = package.strip_prefix("golang.org/x/").unwrap();
-                Ok(format!("https://go.googlesource.com/{}.git", name))
-            } else {
-                Err(format!(
-                    "Repository URL not found for go:{}. Add override to ~/.config/dotdeps/config.json",
-                    package
-                ).into())
-            }
-        }
-        _ => {
-            // Other ecosystems need registry lookup (task-004)
-            Err(format!(
-                "Repository detection for {} not yet implemented. Specify version explicitly or add override to ~/.config/dotdeps/config.json",
-                ecosystem
-            ).into())
+        cli::Ecosystem::Python => python::detect_repo_url(package).map_err(|e| e.into()),
+        cli::Ecosystem::Go => detect_go_repo_url(package),
+        _ => Err(format!(
+            "Repository detection for {} not yet implemented. Add override to ~/.config/dotdeps/config.json",
+            ecosystem
+        )
+        .into()),
+    }
+}
+
+/// Detect repository URL for Go modules
+///
+/// Go modules have the repo URL embedded in their module path:
+/// - github.com/org/repo -> https://github.com/org/repo.git
+/// - golang.org/x/name -> https://go.googlesource.com/name.git
+fn detect_go_repo_url(package: &str) -> Result<String, Box<dyn std::error::Error>> {
+    if package.starts_with("github.com/") {
+        // Strip any version suffix like /v2, /v3, etc.
+        let repo_path = strip_go_version_suffix(package);
+        Ok(format!("https://{}.git", repo_path))
+    } else if package.starts_with("golang.org/x/") {
+        let name = package.strip_prefix("golang.org/x/").unwrap();
+        // Also strip version suffix from golang.org packages
+        let name = strip_go_version_suffix(name);
+        Ok(format!("https://go.googlesource.com/{}.git", name))
+    } else {
+        Err(format!(
+            "Repository URL not found for go:{}. Add override to ~/.config/dotdeps/config.json",
+            package
+        )
+        .into())
+    }
+}
+
+/// Strip Go module version suffix (/v2, /v3, etc.)
+fn strip_go_version_suffix(path: &str) -> &str {
+    // Check for /vN suffix where N is a digit
+    if let Some(idx) = path.rfind("/v") {
+        let suffix = &path[idx + 2..];
+        if !suffix.is_empty() && suffix.chars().all(|c| c.is_ascii_digit()) {
+            return &path[..idx];
         }
     }
+    path
 }
 
 fn run_remove(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {

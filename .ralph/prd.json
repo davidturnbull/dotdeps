@@ -54,7 +54,7 @@
         "Verify version detection from poetry.lock works",
         "Verify repo detection for 'requests' package works"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-005",

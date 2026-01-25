@@ -15,7 +15,7 @@ cargo install --path .
 ## Usage
 
 ```bash
-dotdeps add <ecosystem>:<package>@<version>
+dotdeps add <ecosystem>:<package>[@<version>]
 dotdeps remove <ecosystem>:<package>
 dotdeps list
 dotdeps --clean
@@ -23,26 +23,32 @@ dotdeps --clean
 
 ### Supported Ecosystems
 
-- `python` - Python packages (PyPI)
-- `node` - Node.js packages (npm)
-- `go` - Go modules
-- `rust` - Rust crates (crates.io)
-- `ruby` - Ruby gems (RubyGems)
+| Ecosystem | Version from Lockfile | Repo Detection |
+|-----------|----------------------|----------------|
+| `python`  | poetry.lock, uv.lock, requirements.txt, pyproject.toml | PyPI API |
+| `go`      | -                    | Module path |
+| `node`    | -                    | -          |
+| `rust`    | -                    | -          |
+| `ruby`    | -                    | -          |
 
 ### Examples
 
 ```bash
+# Python (fully supported)
+dotdeps add python:requests              # version from lockfile
+dotdeps add python:requests@2.31.0       # explicit version
+dotdeps add python:flask
+dotdeps add python:typing-extensions
+
 # Go modules (fully supported)
 dotdeps add go:github.com/gin-gonic/gin@1.9.1
 dotdeps add go:golang.org/x/sync@0.6.0
 
 # General commands
-dotdeps remove go:github.com/gin-gonic/gin
+dotdeps remove python:requests
 dotdeps list
-dotdeps --clean                       # remove all .deps/
+dotdeps --clean                          # remove all .deps/
 ```
-
-**Note:** Other ecosystems (python, node, rust, ruby) require registry repo detection, which is not yet implemented.
 
 ## Directory Structure
 
@@ -62,9 +68,18 @@ Symlinks are created at:
 .deps/<ecosystem>/<package> -> ~/.cache/dotdeps/<ecosystem>/<package>/<version>
 ```
 
+## Python Lockfile Support
+
+When no version is specified, dotdeps searches for lockfiles (walking up from the current directory) in this priority order:
+
+1. `poetry.lock` - Poetry lockfile
+2. `uv.lock` - uv lockfile
+3. `requirements.txt` - pip requirements (only exact pins: `==`)
+4. `pyproject.toml` - Poetry or PEP 621 dependencies
+
 ## Status
 
-**Work in progress.** Git cloning is functional for Go modules. Other ecosystems pending registry detection implementation.
+**Work in progress.** Python and Go ecosystems are fully functional. Other ecosystems pending implementation.
 
 - [x] CLI argument parsing
 - [x] Cache directory management
@@ -74,8 +89,11 @@ Symlinks are created at:
 - [x] Clean command
 - [x] Git cloning with tag resolution (shallow clone, --depth 1)
 - [x] Go ecosystem: repo URL detection from module path
-- [ ] Lockfile parsing for automatic version detection
-- [ ] Registry repo detection for Python/Node/Rust/Ruby
+- [x] Python ecosystem: lockfile parsing (poetry.lock, uv.lock, requirements.txt, pyproject.toml)
+- [x] Python ecosystem: PyPI repo URL detection
+- [ ] Node ecosystem: lockfile parsing and npm registry detection
+- [ ] Rust ecosystem: Cargo.lock parsing and crates.io detection
+- [ ] Ruby ecosystem: Gemfile.lock parsing and RubyGems detection
 
 ## License
 

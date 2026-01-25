@@ -101,3 +101,51 @@
 
 ### Next
 - task-004: Implement Python ecosystem lockfile parsing and PyPI repo detection
+
+## Iteration 4 - task-004: Python ecosystem lockfile parsing and PyPI repo detection
+
+### Completed
+- Created python module with lockfile and pypi submodules
+- Implemented lockfile parsing for:
+  - poetry.lock (TOML [[package]] array)
+  - uv.lock (TOML [[package]] array)
+  - requirements.txt (exact pins: package==version)
+  - pyproject.toml (tool.poetry.dependencies and project.dependencies PEP 621)
+- Implemented PyPI repo URL detection via JSON API
+  - Checks project_urls for Source, Repository, GitHub keys
+  - Falls back to home_page if it looks like a git repo
+- Integrated lockfile lookup into add command when version is omitted
+- Python package names normalized (case-insensitive, - and _ equivalent)
+- 35 unit tests pass
+
+### Key decisions
+- Used toml crate for TOML parsing with serde deserialization
+- Used ureq for HTTP requests (minimal dependency footprint)
+- Used serde_json for PyPI JSON API parsing
+- Lockfile search walks up directory tree to find nearest lockfile
+- Lockfile priority: poetry.lock > uv.lock > requirements.txt > pyproject.toml
+- requirements.txt only returns exact versions (== pins) for reliability
+- pyproject.toml supports both Poetry-style and PEP 621-style dependencies
+- Go repo detection refactored to use regex-like version suffix stripping
+
+### Files changed
+- Cargo.toml (added serde, serde_json, toml, ureq dependencies)
+- src/main.rs (added python module, lookup_version function, updated detect_repo_url)
+- src/python.rs (new - module root)
+- src/python/lockfile.rs (new - lockfile parsing)
+- src/python/pypi.rs (new - PyPI API integration)
+- README.md (updated status and examples)
+- .ralph/prd.json (task-004 passes: true)
+
+### Verified behavior
+- `dotdeps add python:requests` reads version from poetry.lock/uv.lock/etc.
+- `dotdeps add python:flask` fetches from PyPI, clones repo at correct tag
+- `dotdeps add python:typing-extensions` normalizes package name with hyphens
+- `dotdeps add python:httpx@0.25.0` explicit version overrides lockfile
+- Version not in lockfile shows helpful error message
+- No lockfile found shows clear error message
+- Cache hit reuses cached clone
+- `dotdeps list` shows correct versions
+
+### Next
+- Implement Node.js ecosystem (pnpm-lock.yaml, yarn.lock, package-lock.json, npm registry)

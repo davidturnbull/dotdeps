@@ -28,7 +28,7 @@ dotdeps --clean
 | `python`  | poetry.lock, uv.lock, requirements.txt, pyproject.toml | PyPI API |
 | `node`    | pnpm-lock.yaml, yarn.lock, package-lock.json | npm registry |
 | `rust`    | Cargo.lock           | crates.io API  |
-| `go`      | -                    | Module path |
+| `go`      | go.sum               | Module path |
 | `ruby`    | Gemfile.lock         | RubyGems API   |
 
 ### Examples
@@ -52,6 +52,7 @@ dotdeps add rust:serde@1.0.228           # explicit version
 dotdeps add cargo:clap@4.5.0             # cargo alias
 
 # Go modules (fully supported)
+dotdeps add go:github.com/gin-gonic/gin    # version from go.sum
 dotdeps add go:github.com/gin-gonic/gin@1.9.1
 dotdeps add go:golang.org/x/sync@0.6.0
 
@@ -116,6 +117,12 @@ When no version is specified, dotdeps searches for `Gemfile.lock` walking up fro
 
 Gem names are case-insensitive. Platform-specific version suffixes (e.g., `-x86_64-linux`, `-arm64-darwin`, `-java`) are stripped automatically.
 
+## Go Module Support
+
+When no version is specified, dotdeps searches for `go.sum` walking up from the current directory.
+
+Go module paths (e.g., `github.com/gin-gonic/gin`) are used directly as repository URLs. Module paths with major version suffixes (e.g., `/v2`, `/v3`) are handled correctly.
+
 ## Status
 
 **Work in progress.** Python, Node.js, Rust, Go, and Ruby ecosystems are fully functional. Other features pending implementation.
@@ -136,7 +143,7 @@ Gem names are case-insensitive. Platform-specific version suffixes (e.g., `-x86_
 - [x] Rust ecosystem: crates.io repo URL detection
 - [x] Ruby ecosystem: Gemfile.lock parsing
 - [x] Ruby ecosystem: RubyGems repo URL detection
-- [ ] Go ecosystem: go.sum lockfile parsing
+- [x] Go ecosystem: go.sum lockfile parsing
 - [ ] Config file support (cache limits, repo overrides)
 
 ## License

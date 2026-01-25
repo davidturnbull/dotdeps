@@ -118,7 +118,7 @@
         "Verify version detection from go.sum works",
         "Go repo URL detection already implemented via module path"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-010",

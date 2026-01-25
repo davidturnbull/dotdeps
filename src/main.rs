@@ -2,6 +2,7 @@ mod cache;
 mod cli;
 mod deps;
 mod git;
+mod go;
 mod node;
 mod python;
 mod ruby;
@@ -91,13 +92,9 @@ fn lookup_version(
     match ecosystem {
         cli::Ecosystem::Python => python::find_version(package).map_err(|e| e.into()),
         cli::Ecosystem::Node => node::find_version(package).map_err(|e| e.into()),
+        cli::Ecosystem::Go => go::find_version(package).map_err(|e| e.into()),
         cli::Ecosystem::Rust => rust::find_version(package).map_err(|e| e.into()),
         cli::Ecosystem::Ruby => ruby::find_version(package).map_err(|e| e.into()),
-        _ => Err(format!(
-            "No version specified. Specify version explicitly: dotdeps add {}:{}@<version>",
-            ecosystem, package
-        )
-        .into()),
     }
 }
 

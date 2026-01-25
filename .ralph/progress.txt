@@ -281,3 +281,41 @@
 
 ### Next
 - Implement Go ecosystem go.sum lockfile parsing (task-009)
+
+## Iteration 8 - task-009: Go ecosystem go.sum lockfile parsing
+
+### Completed
+- Created go module with lockfile submodule
+- Implemented go.sum parsing for version lookup
+  - Handles standard format: `<module path> <version> <hash>`
+  - Strips /go.mod suffix from version entries
+  - Strips v prefix from versions for cache consistency
+  - Module paths normalized (lowercase for matching)
+- Integrated into main.rs lookup_version
+- 91 unit tests pass (5 new Go tests)
+
+### Key decisions
+- Followed same module structure as python, node, rust, ruby ecosystems
+- Go module paths are case-sensitive but we normalize for matching
+- No separate registry module needed (repo URL detection already in main.rs)
+- No new dependencies needed (reuses existing thiserror, std)
+
+### Files changed
+- src/go.rs (new - module root)
+- src/go/lockfile.rs (new - go.sum parsing)
+- src/main.rs (added go module, wired lockfile lookup)
+- README.md (updated ecosystem table, examples, added Go section)
+- .ralph/prd.json (task-009 passes: true)
+
+### Verified behavior
+- `dotdeps add go:github.com/gin-gonic/gin` reads version from go.sum (1.9.1)
+- `dotdeps add go:golang.org/x/sync` reads version from go.sum (0.6.0)
+- `dotdeps add go:github.com/example/pkg/v2` handles /v2 suffix correctly
+- No go.sum found shows clear error message
+- Module not in go.sum shows helpful error message
+- Cache hit reuses cached clone
+- `dotdeps list` shows go:github.com/gin-gonic/gin@1.9.1 format
+- `dotdeps remove go:github.com/gin-gonic/gin` removes symlink correctly
+
+### Next
+- Implement config file support (task-010)

@@ -137,7 +137,7 @@ fn run_add_git_dep(
         if dry_run {
             // In dry-run mode, skip actual cloning
             if !json_output {
-                println!("{}  would clone from {} at {}", prefix, url, commit);
+                println!("{}  cloned at {}", prefix, commit);
             }
             (false, Some(commit.to_string()))
         } else {
@@ -177,10 +177,8 @@ fn run_add_git_dep(
             result = result.with_dry_run();
         }
         output::print_json(&result);
-    } else if dry_run {
-        println!("{}Would create {}", prefix, link_path.display());
     } else {
-        println!("Created {}", link_path.display());
+        println!("{}Created {}", prefix, link_path.display());
     }
 
     Ok(())
@@ -215,7 +213,7 @@ fn run_add_registry_dep(
         if dry_run {
             // In dry-run mode, skip actual cloning
             if !json_output {
-                println!("{}  would clone from {}", prefix, repo_url);
+                println!("{}  cloned at {}", prefix, version);
             }
             (false, None, None)
         } else {
@@ -271,10 +269,8 @@ fn run_add_registry_dep(
             result = result.with_dry_run();
         }
         output::print_json(&result);
-    } else if dry_run {
-        println!("{}Would create {}", prefix, link_path.display());
     } else {
-        println!("Created {}", link_path.display());
+        println!("{}Created {}", prefix, link_path.display());
     }
 
     Ok(())
@@ -396,10 +392,8 @@ fn run_remove(
             result = result.with_dry_run();
         }
         output::print_json(&result);
-    } else if dry_run {
-        println!("{}Would remove {}:{}", prefix, spec.ecosystem, spec.package);
     } else {
-        println!("Removed {}:{}", spec.ecosystem, spec.package);
+        println!("{}Removed {}:{}", prefix, spec.ecosystem, spec.package);
     }
     Ok(())
 }
@@ -454,10 +448,8 @@ fn run_clean(json_output: bool, dry_run: bool) -> Result<(), Box<dyn std::error:
             result.dry_run = true;
         }
         output::print_json(&result);
-    } else if dry_run {
-        println!("{}Would remove .deps/", prefix);
     } else {
-        println!("Removed .deps/");
+        println!("{}Removed .deps/", prefix);
     }
     Ok(())
 }

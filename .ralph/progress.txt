@@ -235,3 +235,49 @@
 
 ### Next
 - Implement Ruby ecosystem (Gemfile.lock parsing, RubyGems repo detection)
+
+## Iteration 7 - task-008: Ruby ecosystem Gemfile.lock parsing and RubyGems repo detection
+
+### Completed
+- Created ruby module with lockfile and rubygems submodules
+- Implemented Gemfile.lock parsing for version lookup
+  - Handles custom Bundler format (not TOML/YAML)
+  - Parses GEM specs section for gem names and versions
+  - Strips platform suffixes (-x86_64-linux, -arm64-darwin, -java)
+  - Handles multiple GEM sections (private registries)
+- Implemented RubyGems repo URL detection via JSON API
+  - Uses /api/v1/gems/{name}.json endpoint
+  - Checks source_code_uri, falls back to homepage_uri
+  - Strips GitHub UI paths (/tree/..., /blob/..., /releases/...)
+- Gem names normalized (case-insensitive)
+- 86 unit tests pass
+
+### Key decisions
+- Gemfile.lock uses custom format - implemented state machine parser
+- Gems in specs are 4-space indented; dependencies are 6-space (skipped)
+- RubyGems source_code_uri sometimes points to /tree/vX.X.X - stripped
+- Followed same module structure as python, node, rust ecosystems
+- No new dependencies needed (reuses ureq, serde_json)
+
+### Files changed
+- src/ruby.rs (new - module root)
+- src/ruby/lockfile.rs (new - Gemfile.lock parsing)
+- src/ruby/rubygems.rs (new - RubyGems API integration)
+- src/main.rs (added ruby module, wired lockfile and repo detection)
+- README.md (updated ecosystem table, examples, lockfile section)
+- .ralph/prd.json (task-008 passes: true)
+
+### Verified behavior
+- `dotdeps add ruby:rails` reads version from Gemfile.lock (7.1.0)
+- `dotdeps add ruby:rails@7.1.0` explicit version clones at v7.1.0 tag
+- `dotdeps add ruby:sidekiq` fetches from RubyGems, clones at v7.2.0 tag
+- `dotdeps add ruby:nokogiri` handles platform suffix (1.16.0-arm64-darwin -> 1.16.0)
+- `dotdeps add ruby:puma@6.4.0` explicit version works
+- Cache hit on second add of same package
+- `dotdeps list` shows ruby:rails@7.1.0 format
+- `dotdeps remove ruby:puma` removes symlink correctly
+- No Gemfile.lock shows clear error message
+- Gem not in lockfile shows helpful error message
+
+### Next
+- Implement Go ecosystem go.sum lockfile parsing (task-009)

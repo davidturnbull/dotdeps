@@ -107,7 +107,7 @@
         "Verify version detection from Gemfile.lock works",
         "Verify repo detection for 'rails' package works"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-009",

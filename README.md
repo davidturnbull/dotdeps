@@ -29,7 +29,7 @@ dotdeps --clean
 | `node`    | pnpm-lock.yaml, yarn.lock, package-lock.json | npm registry |
 | `rust`    | Cargo.lock           | crates.io API  |
 | `go`      | -                    | Module path |
-| `ruby`    | -                    | -          |
+| `ruby`    | Gemfile.lock         | RubyGems API   |
 
 ### Examples
 
@@ -54,6 +54,12 @@ dotdeps add cargo:clap@4.5.0             # cargo alias
 # Go modules (fully supported)
 dotdeps add go:github.com/gin-gonic/gin@1.9.1
 dotdeps add go:golang.org/x/sync@0.6.0
+
+# Ruby (fully supported)
+dotdeps add ruby:rails                   # version from Gemfile.lock
+dotdeps add ruby:rails@7.1.0             # explicit version
+dotdeps add ruby:sidekiq
+dotdeps add ruby:nokogiri
 
 # General commands
 dotdeps remove python:requests
@@ -104,9 +110,15 @@ When no version is specified, dotdeps searches for `Cargo.lock` walking up from 
 
 Crate names are normalized for comparison (case-insensitive, `-` and `_` treated as equivalent).
 
+## Ruby Lockfile Support
+
+When no version is specified, dotdeps searches for `Gemfile.lock` walking up from the current directory.
+
+Gem names are case-insensitive. Platform-specific version suffixes (e.g., `-x86_64-linux`, `-arm64-darwin`, `-java`) are stripped automatically.
+
 ## Status
 
-**Work in progress.** Python, Node.js, Rust, and Go ecosystems are fully functional. Other ecosystems pending implementation.
+**Work in progress.** Python, Node.js, Rust, Go, and Ruby ecosystems are fully functional. Other features pending implementation.
 
 - [x] CLI argument parsing
 - [x] Cache directory management
@@ -122,7 +134,8 @@ Crate names are normalized for comparison (case-insensitive, `-` and `_` treated
 - [x] Node ecosystem: npm registry repo URL detection
 - [x] Rust ecosystem: Cargo.lock parsing
 - [x] Rust ecosystem: crates.io repo URL detection
-- [ ] Ruby ecosystem: Gemfile.lock parsing and RubyGems detection
+- [x] Ruby ecosystem: Gemfile.lock parsing
+- [x] Ruby ecosystem: RubyGems repo URL detection
 - [ ] Go ecosystem: go.sum lockfile parsing
 - [ ] Config file support (cache limits, repo overrides)
 

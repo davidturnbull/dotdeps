@@ -314,7 +314,24 @@ fn collect_dep_keys(map: &HashMap<String, serde_json::Value>, deps: &mut Vec<Str
 }
 
 fn is_local_node_spec(value: &serde_json::Value) -> bool {
-    value.as_str().is_some_and(is_local_version_string)
+    if let Some(spec) = value.as_str() {
+        return is_local_version_string(spec);
+    }
+
+    if let Some(obj) = value.as_object() {
+        if let Some(spec) = obj.get("version").and_then(|v| v.as_str())
+            && is_local_version_string(spec)
+        {
+            return true;
+        }
+        if let Some(spec) = obj.get("specifier").and_then(|v| v.as_str())
+            && is_local_version_string(spec)
+        {
+            return true;
+        }
+    }
+
+    false
 }
 
 fn is_local_version_string(version: &str) -> bool {

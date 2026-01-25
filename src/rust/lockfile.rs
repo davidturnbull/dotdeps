@@ -1,7 +1,12 @@
 //! Lockfile parsing for Rust ecosystem
 //!
 //! Supports finding package versions from Cargo.lock
+//!
+//! Note: Cargo.lock can have git dependencies with `source = "git+..."` but
+//! this implementation currently only returns version strings. Git dependency
+//! detection could be added by parsing the source field.
 
+use crate::cli::VersionInfo;
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -30,7 +35,7 @@ pub enum LockfileError {
 /// Find the version of a crate by searching Cargo.lock
 ///
 /// Searches upward from the current directory for Cargo.lock
-pub fn find_version(package: &str) -> Result<String, LockfileError> {
+pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
     let lockfile = find_lockfile()?;
     parse_version_from_lockfile(&lockfile, package)
 }
@@ -71,7 +76,7 @@ struct CargoPackage {
 }
 
 /// Parse version from Cargo.lock
-fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -88,7 +93,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, Loc
     // Crate names are case-insensitive and use - or _ interchangeably
     for pkg in packages {
         if normalize_crate_name(&pkg.name) == normalized_package {
-            return Ok(pkg.version);
+            return Ok(VersionInfo::Version(pkg.version));
         }
     }
 

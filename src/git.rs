@@ -168,6 +168,84 @@ fn try_clone_default_branch(repo_url: &str, dest: &Path) -> Result<CloneResult, 
     }
 }
 
+/// Clone a repository at a specific commit hash
+///
+/// Used for git dependencies that specify a commit hash instead of a version tag.
+/// Uses a blobless clone (--filter=blob:none) which fetches all commits but downloads
+/// blobs on-demand. This is much faster than a full clone for large repos while
+/// still allowing checkout of any commit.
+pub fn clone_at_commit(repo_url: &str, commit: &str, dest: &Path) -> Result<CloneResult, GitError> {
+    // Ensure parent directory exists
+    if let Some(parent) = dest.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| GitError::CommandFailed {
+            message: format!("Failed to create directory {}: {}", parent.display(), e),
+        })?;
+    }
+
+    // Clean up any existing partial clone
+    cleanup_partial_clone(dest);
+
+    // If commit is "HEAD", just do a shallow clone
+    if commit == "HEAD" {
+        let output = Command::new("git")
+            .args(["clone", "--depth", "1", repo_url])
+            .arg(dest)
+            .output()
+            .map_err(|source| GitError::Exec { source })?;
+
+        if !output.status.success() {
+            cleanup_partial_clone(dest);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(GitError::CommandFailed {
+                message: stderr.trim().to_string(),
+            });
+        }
+
+        return Ok(CloneResult {
+            used_default_branch: true,
+            cloned_ref: commit.to_string(),
+        });
+    }
+
+    // For specific commits, use a blobless clone which downloads commit metadata
+    // but fetches file contents on-demand. This allows checking out any commit
+    // while being much faster than a full clone.
+    let output = Command::new("git")
+        .args(["clone", "--filter=blob:none", repo_url])
+        .arg(dest)
+        .output()
+        .map_err(|source| GitError::Exec { source })?;
+
+    if !output.status.success() {
+        cleanup_partial_clone(dest);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(GitError::CommandFailed {
+            message: stderr.trim().to_string(),
+        });
+    }
+
+    // Checkout the specific commit
+    let output = Command::new("git")
+        .args(["-C"])
+        .arg(dest)
+        .args(["checkout", commit])
+        .output()
+        .map_err(|source| GitError::Exec { source })?;
+
+    if !output.status.success() {
+        cleanup_partial_clone(dest);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(GitError::CommandFailed {
+            message: format!("Failed to checkout commit {}: {}", commit, stderr.trim()),
+        });
+    }
+
+    Ok(CloneResult {
+        used_default_branch: false,
+        cloned_ref: commit.to_string(),
+    })
+}
+
 /// Remove a partial clone directory if it exists
 fn cleanup_partial_clone(dest: &Path) {
     if dest.exists() {

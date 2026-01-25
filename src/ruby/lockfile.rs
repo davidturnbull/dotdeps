@@ -12,7 +12,11 @@
 //!     actionpack (7.1.0)
 //!       rack
 //! ```
+//!
+//! Note: Git gems appear under GIT sections, not GEM sections.
+//! This implementation currently only parses GEM sections.
 
+use crate::cli::VersionInfo;
 use std::fs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -37,7 +41,7 @@ pub enum LockfileError {
 /// Find the version of a gem by searching Gemfile.lock
 ///
 /// Searches upward from the current directory for Gemfile.lock
-pub fn find_version(package: &str) -> Result<String, LockfileError> {
+pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
     let lockfile = find_lockfile()?;
     parse_version_from_lockfile(&lockfile, package)
 }
@@ -72,7 +76,7 @@ fn find_lockfile() -> Result<PathBuf, LockfileError> {
 ///   specs:
 ///     rails (7.1.0)
 /// ```
-fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -105,7 +109,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, Loc
         if let Some(gem_info) = parse_gem_line(line)
             && normalize_gem_name(&gem_info.name) == normalized_package
         {
-            return Ok(gem_info.version);
+            return Ok(VersionInfo::Version(gem_info.version));
         }
     }
 

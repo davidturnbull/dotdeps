@@ -473,3 +473,57 @@
 
 ### Next
 - Implement git dependencies (task-012), local path deps (task-013), or bun.lock (task-015)
+
+## Iteration 13 - task-012 & task-013: Git dependencies and local path dependencies
+
+### Completed
+- Added VersionInfo enum in cli.rs with variants:
+  - Version(String) - regular registry versions
+  - Git { url, commit } - git dependencies with URL and commit hash
+  - LocalPath { path } - local path dependencies (skipped silently)
+- Updated all ecosystem lockfile parsers to return VersionInfo
+- Implemented git dependency detection:
+  - Python: type = "git" with url and resolved_reference fields
+  - Python: type = "directory" for local path deps
+  - Node: git+https://, git+ssh://, git://, git@ URL formats in resolved/version fields
+  - Node: link: and file: prefixes for local path deps
+- Added clone_at_commit() in git.rs for cloning at specific commits
+  - Uses blobless clone (--filter=blob:none) for efficient fetching
+  - Checkout specific commit after clone
+- Updated main.rs with three separate flows:
+  - LocalPath: skip silently with info message
+  - Git: clone from URL, use truncated commit as version in cache path
+  - Version: existing registry detection and cloning flow
+- SSH URLs (ssh://git@...) converted to HTTPS for reliable cloning
+- 122 unit tests pass
+
+### Key decisions
+- VersionInfo enum cleanly separates version types at parse time
+- Blobless clone for commit-based clones (fetches commits without blobs, on-demand file access)
+- Commit hash truncated to 12 characters for cache path readability
+- SSH URLs converted to HTTPS to avoid SSH key issues during clone
+- Local path deps show "Skipping local dependency..." message (not silently ignored)
+
+### Files changed
+- src/cli.rs (added VersionInfo enum)
+- src/python/lockfile.rs (added git/directory source detection)
+- src/node/lockfile.rs (added git URL parsing, SSH to HTTPS conversion)
+- src/go/lockfile.rs (updated to return VersionInfo)
+- src/rust/lockfile.rs (updated to return VersionInfo)
+- src/ruby/lockfile.rs (updated to return VersionInfo)
+- src/swift/lockfile.rs (updated to return VersionInfo)
+- src/git.rs (added clone_at_commit with blobless clone)
+- src/main.rs (added VersionInfo handling with git/local/registry flows)
+- .ralph/prd.json (task-012 and task-013 passes: true)
+
+### Verified behavior
+- Python git dep: poetry.lock with type="git" clones at commit hash
+- Node git dep: package-lock.json with git+ssh:// URL clones correctly
+- Local path dep: poetry.lock with type="directory" shows skip message
+- Node local dep: link: and file: prefixes show skip message
+- Cache uses truncated commit hash as version (12 chars)
+- Symlink points to cache directory correctly
+- `dotdeps list` shows package@commit format for git deps
+
+### Next
+- Implement bun.lock support (task-015), --json flag (task-017), or --dry-run flag (task-018)

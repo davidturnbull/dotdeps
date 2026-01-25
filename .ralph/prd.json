@@ -158,7 +158,7 @@
         "Checkout specific commit after clone",
         "Verify git dependency cloning works end-to-end"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-013",
@@ -170,7 +170,7 @@
         "Skip silently with info message when local dep detected",
         "Verify local path deps don't cause errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-015",

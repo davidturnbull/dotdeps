@@ -7,7 +7,12 @@
 //! - pyproject.toml (TOML, `[tool.poetry.dependencies]` or `[project.dependencies]`)
 //!
 //! Lockfile priority order: poetry.lock > uv.lock > requirements.txt > pyproject.toml
+//!
+//! Also detects special dependency types:
+//! - Git dependencies: `[package.source] type = "git"`
+//! - Local path dependencies: `[package.source] type = "directory"`
 
+use crate::cli::VersionInfo;
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -37,7 +42,12 @@ pub enum LockfileError {
 ///
 /// Searches upward from the current directory for lockfiles in priority order:
 /// poetry.lock > uv.lock > requirements.txt > pyproject.toml
-pub fn find_version(package: &str) -> Result<String, LockfileError> {
+///
+/// Returns `VersionInfo` which can be:
+/// - `Version(string)` for regular registry packages
+/// - `Git { url, commit }` for git dependencies
+/// - `LocalPath { path }` for local directory dependencies
+pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
     let lockfile = find_lockfile()?;
     parse_version_from_lockfile(&lockfile, package)
 }
@@ -96,7 +106,7 @@ fn find_lockfile() -> Result<PathBuf, LockfileError> {
 }
 
 /// Parse version from a lockfile
-fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     match filename {
@@ -122,10 +132,29 @@ struct TomlLockfile {
 struct TomlPackage {
     name: String,
     version: String,
+    /// Source information for non-registry packages (git, directory, url)
+    source: Option<TomlPackageSource>,
+}
+
+/// Source information for a package
+///
+/// Poetry/uv lockfiles use this to specify non-registry sources:
+/// - `type = "git"` with `url` and `resolved_reference` (commit hash)
+/// - `type = "directory"` with `url` (local path)
+/// - `type = "url"` with `url` (direct URL to archive)
+#[derive(Deserialize)]
+struct TomlPackageSource {
+    /// Source type: "git", "directory", "url"
+    #[serde(rename = "type")]
+    source_type: Option<String>,
+    /// URL for git repos or local paths
+    url: Option<String>,
+    /// Resolved commit hash for git dependencies
+    resolved_reference: Option<String>,
 }
 
 /// Parse version from poetry.lock or uv.lock
-fn parse_toml_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_toml_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -142,13 +171,49 @@ fn parse_toml_lockfile(path: &Path, package: &str) -> Result<String, LockfileErr
     // Python package names are case-insensitive and often use - or _ interchangeably
     for pkg in packages {
         if normalize_python_name(&pkg.name) == normalize_python_name(&normalized_package) {
-            return Ok(pkg.version);
+            // Check for special source types (git, directory)
+            if let Some(source) = &pkg.source {
+                return extract_version_info_from_source(source, &pkg.version);
+            }
+            // Regular registry package
+            return Ok(VersionInfo::Version(pkg.version));
         }
     }
 
     Err(LockfileError::VersionNotFound {
         package: package.to_string(),
     })
+}
+
+/// Extract VersionInfo from a package source
+///
+/// Handles:
+/// - `type = "git"` -> VersionInfo::Git with url and commit hash
+/// - `type = "directory"` -> VersionInfo::LocalPath
+/// - Other types (url, etc.) -> Fall back to version string
+fn extract_version_info_from_source(
+    source: &TomlPackageSource,
+    version: &str,
+) -> Result<VersionInfo, LockfileError> {
+    match source.source_type.as_deref() {
+        Some("git") => {
+            let url = source.url.clone().unwrap_or_default();
+            let commit = source.resolved_reference.clone().unwrap_or_default();
+
+            if url.is_empty() || commit.is_empty() {
+                // Malformed git source, fall back to version
+                Ok(VersionInfo::Version(version.to_string()))
+            } else {
+                Ok(VersionInfo::Git { url, commit })
+            }
+        }
+        Some("directory") => {
+            let path = source.url.clone().unwrap_or_default();
+            Ok(VersionInfo::LocalPath { path })
+        }
+        // For "url" type or unknown types, use the version string
+        _ => Ok(VersionInfo::Version(version.to_string())),
+    }
 }
 
 // === requirements.txt Parsing ===
@@ -160,7 +225,10 @@ fn parse_toml_lockfile(path: &Path, package: &str) -> Result<String, LockfileErr
 /// - requests>=2.31.0
 /// - requests~=2.31.0
 /// - requests[security]==2.31.0
-fn parse_requirements_txt(path: &Path, package: &str) -> Result<String, LockfileError> {
+///
+/// Note: requirements.txt doesn't typically contain git deps in a parseable format,
+/// so this always returns VersionInfo::Version
+fn parse_requirements_txt(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -185,7 +253,7 @@ fn parse_requirements_txt(path: &Path, package: &str) -> Result<String, Lockfile
         if let Some((name, version)) = parse_requirement_line(line)
             && normalize_python_name(&name) == normalized_package
         {
-            return Ok(version);
+            return Ok(VersionInfo::Version(version));
         }
     }
 
@@ -252,7 +320,10 @@ fn parse_requirement_line(line: &str) -> Option<(String, String)> {
 /// Looks for dependencies in:
 /// - [tool.poetry.dependencies]
 /// - [project.dependencies]
-fn parse_pyproject_toml(path: &Path, package: &str) -> Result<String, LockfileError> {
+///
+/// Note: pyproject.toml can have git deps but parsing them reliably is complex.
+/// This primarily handles version strings; git deps should use poetry.lock/uv.lock.
+fn parse_pyproject_toml(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -266,13 +337,13 @@ fn parse_pyproject_toml(path: &Path, package: &str) -> Result<String, LockfileEr
     let normalized_package = normalize_python_name(package);
 
     // Try tool.poetry.dependencies first
-    if let Some(version) = extract_poetry_dependency(&doc, &normalized_package) {
-        return Ok(version);
+    if let Some(version_info) = extract_poetry_dependency(&doc, &normalized_package) {
+        return Ok(version_info);
     }
 
     // Try project.dependencies (PEP 621)
     if let Some(version) = extract_pep621_dependency(&doc, &normalized_package) {
-        return Ok(version);
+        return Ok(VersionInfo::Version(version));
     }
 
     Err(LockfileError::VersionNotFound {
@@ -281,7 +352,7 @@ fn parse_pyproject_toml(path: &Path, package: &str) -> Result<String, LockfileEr
 }
 
 /// Extract version from [tool.poetry.dependencies]
-fn extract_poetry_dependency(doc: &toml::Value, normalized_package: &str) -> Option<String> {
+fn extract_poetry_dependency(doc: &toml::Value, normalized_package: &str) -> Option<VersionInfo> {
     let deps = doc
         .get("tool")?
         .get("poetry")?
@@ -302,10 +373,39 @@ fn extract_poetry_dependency(doc: &toml::Value, normalized_package: &str) -> Opt
 /// Can be:
 /// - String: "^2.31.0" or "2.31.0"
 /// - Table: { version = "^2.31.0", optional = true }
-fn extract_version_from_poetry_dep(value: &toml::Value) -> Option<String> {
+/// - Table with git: { git = "url", rev = "commit" }
+/// - Table with path: { path = "../local" }
+fn extract_version_from_poetry_dep(value: &toml::Value) -> Option<VersionInfo> {
     match value {
-        toml::Value::String(s) => Some(strip_version_constraint(s)),
-        toml::Value::Table(t) => t.get("version")?.as_str().map(strip_version_constraint),
+        toml::Value::String(s) => Some(VersionInfo::Version(strip_version_constraint(s))),
+        toml::Value::Table(t) => {
+            // Check for git dependency
+            if let Some(git_url) = t.get("git").and_then(|v| v.as_str()) {
+                let commit = t
+                    .get("rev")
+                    .or_else(|| t.get("tag"))
+                    .or_else(|| t.get("branch"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("HEAD")
+                    .to_string();
+                return Some(VersionInfo::Git {
+                    url: git_url.to_string(),
+                    commit,
+                });
+            }
+
+            // Check for path dependency
+            if let Some(path) = t.get("path").and_then(|v| v.as_str()) {
+                return Some(VersionInfo::LocalPath {
+                    path: path.to_string(),
+                });
+            }
+
+            // Regular version dependency
+            t.get("version")?
+                .as_str()
+                .map(|s| VersionInfo::Version(strip_version_constraint(s)))
+        }
         _ => None,
     }
 }
@@ -445,5 +545,105 @@ version = "2.0.7"
         assert_eq!(packages.len(), 2);
         assert_eq!(packages[0].name, "requests");
         assert_eq!(packages[0].version, "2.31.0");
+    }
+
+    #[test]
+    fn test_parse_toml_lockfile_git_dependency() {
+        let content = r#"
+[[package]]
+name = "alembic"
+version = "1.3.1"
+
+[package.source]
+type = "git"
+url = "https://github.com/sqlalchemy/alembic.git"
+reference = "rel_1_3_1"
+resolved_reference = "8d6bb007a4de046c4d338f4b79b40c9fcbf73ab7"
+
+[[package]]
+name = "requests"
+version = "2.31.0"
+"#;
+
+        let lockfile: TomlLockfile = toml::from_str(content).unwrap();
+        let packages = lockfile.package.unwrap();
+
+        assert_eq!(packages.len(), 2);
+
+        // Git dependency
+        let alembic = &packages[0];
+        assert_eq!(alembic.name, "alembic");
+        let source = alembic.source.as_ref().unwrap();
+        assert_eq!(source.source_type.as_deref(), Some("git"));
+        assert_eq!(
+            source.url.as_deref(),
+            Some("https://github.com/sqlalchemy/alembic.git")
+        );
+        assert_eq!(
+            source.resolved_reference.as_deref(),
+            Some("8d6bb007a4de046c4d338f4b79b40c9fcbf73ab7")
+        );
+
+        // Regular dependency
+        let requests = &packages[1];
+        assert_eq!(requests.name, "requests");
+        assert!(requests.source.is_none());
+    }
+
+    #[test]
+    fn test_parse_toml_lockfile_directory_dependency() {
+        let content = r#"
+[[package]]
+name = "local-pkg"
+version = "0.1.0"
+
+[package.source]
+type = "directory"
+url = "src/local-pkg"
+"#;
+
+        let lockfile: TomlLockfile = toml::from_str(content).unwrap();
+        let packages = lockfile.package.unwrap();
+
+        assert_eq!(packages.len(), 1);
+        let pkg = &packages[0];
+        let source = pkg.source.as_ref().unwrap();
+        assert_eq!(source.source_type.as_deref(), Some("directory"));
+        assert_eq!(source.url.as_deref(), Some("src/local-pkg"));
+    }
+
+    #[test]
+    fn test_extract_version_info_from_source_git() {
+        let source = TomlPackageSource {
+            source_type: Some("git".to_string()),
+            url: Some("https://github.com/org/repo.git".to_string()),
+            resolved_reference: Some("abc123".to_string()),
+        };
+
+        let result = extract_version_info_from_source(&source, "1.0.0").unwrap();
+        assert_eq!(
+            result,
+            VersionInfo::Git {
+                url: "https://github.com/org/repo.git".to_string(),
+                commit: "abc123".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_extract_version_info_from_source_directory() {
+        let source = TomlPackageSource {
+            source_type: Some("directory".to_string()),
+            url: Some("../local-pkg".to_string()),
+            resolved_reference: None,
+        };
+
+        let result = extract_version_info_from_source(&source, "1.0.0").unwrap();
+        assert_eq!(
+            result,
+            VersionInfo::LocalPath {
+                path: "../local-pkg".to_string(),
+            }
+        );
     }
 }

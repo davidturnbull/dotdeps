@@ -6,7 +6,12 @@
 //! - package-lock.json (JSON)
 //!
 //! Lockfile priority order: pnpm-lock.yaml > yarn.lock > package-lock.json
+//!
+//! Also detects special dependency types:
+//! - Git dependencies: URLs starting with `git+`, `git://`, or containing `#commit`
+//! - Local path dependencies: `link:`, `file:` URLs
 
+use crate::cli::VersionInfo;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
@@ -37,7 +42,12 @@ pub enum LockfileError {
 ///
 /// Searches upward from the current directory for lockfiles in priority order:
 /// pnpm-lock.yaml > yarn.lock > package-lock.json
-pub fn find_version(package: &str) -> Result<String, LockfileError> {
+///
+/// Returns `VersionInfo` which can be:
+/// - `Version(string)` for regular registry packages
+/// - `Git { url, commit }` for git dependencies
+/// - `LocalPath { path }` for local link/file dependencies
+pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
     let lockfile = find_lockfile()?;
     parse_version_from_lockfile(&lockfile, package)
 }
@@ -89,7 +99,7 @@ fn find_lockfile() -> Result<PathBuf, LockfileError> {
 }
 
 /// Parse version from a lockfile
-fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     match filename {
@@ -116,7 +126,7 @@ struct PnpmLockfile {
 }
 
 /// Parse version from pnpm-lock.yaml
-fn parse_pnpm_lock(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_pnpm_lock(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -136,7 +146,7 @@ fn parse_pnpm_lock(path: &Path, package: &str) -> Result<String, LockfileError> 
         if let Some((name, version)) = parse_pnpm_package_key(key)
             && normalize_node_name(&name) == normalized_package
         {
-            return Ok(version);
+            return Ok(parse_node_version_string(&version));
         }
     }
 
@@ -177,7 +187,7 @@ fn parse_pnpm_package_key(key: &str) -> Option<(String, String)> {
 ///   resolved "https://..."
 ///   integrity sha512-...
 /// ```
-fn parse_yarn_lock(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_yarn_lock(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -188,6 +198,7 @@ fn parse_yarn_lock(path: &Path, package: &str) -> Result<String, LockfileError> 
     // Parse the custom yarn.lock format line by line
     let mut current_packages: Vec<String> = Vec::new();
     let mut in_entry = false;
+    let mut current_resolved: Option<String> = None;
 
     for line in content.lines() {
         let line = line.trim_end();
@@ -197,7 +208,13 @@ fn parse_yarn_lock(path: &Path, package: &str) -> Result<String, LockfileError> 
             // Parse the package names from the header
             current_packages = parse_yarn_lock_header(line);
             in_entry = true;
+            current_resolved = None;
             continue;
+        }
+
+        // Inside an entry, capture resolved URL for git detection
+        if in_entry && line.trim().starts_with("resolved ") {
+            current_resolved = extract_yarn_resolved(line);
         }
 
         // Inside an entry, look for version line
@@ -209,13 +226,20 @@ fn parse_yarn_lock(path: &Path, package: &str) -> Result<String, LockfileError> 
                 if let Some(name) = extract_package_name_from_yarn_spec(pkg_spec)
                     && normalize_node_name(&name) == normalized_package
                 {
-                    return Ok(version);
+                    // Check if this is a git dependency by looking at the resolved URL
+                    if let Some(resolved) = &current_resolved
+                        && let Some(git_info) = parse_git_url(resolved)
+                    {
+                        return Ok(git_info);
+                    }
+                    return Ok(VersionInfo::Version(version));
                 }
             }
 
             // Reset for next entry
             in_entry = false;
             current_packages.clear();
+            current_resolved = None;
         }
     }
 
@@ -290,6 +314,8 @@ struct PackageLockfile {
 #[derive(Deserialize)]
 struct PackageLockEntry {
     version: Option<String>,
+    /// Resolved URL - can be registry URL or git URL
+    resolved: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -298,7 +324,7 @@ struct PackageLockDep {
 }
 
 /// Parse version from package-lock.json
-fn parse_package_lock(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_package_lock(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -317,10 +343,26 @@ fn parse_package_lock(path: &Path, package: &str) -> Result<String, LockfileErro
         for (key, entry) in packages {
             // Keys are like "node_modules/lodash" or "node_modules/@types/node"
             let pkg_name = key.strip_prefix("node_modules/").unwrap_or(key);
-            if normalize_node_name(pkg_name) == normalized_package
-                && let Some(version) = &entry.version
-            {
-                return Ok(version.clone());
+            if normalize_node_name(pkg_name) == normalized_package {
+                // Check for git dependency in resolved field first
+                if let Some(resolved) = &entry.resolved
+                    && let Some(git_info) = parse_git_url(resolved)
+                {
+                    return Ok(git_info);
+                }
+                // Check for link/file dependencies
+                if let Some(version) = &entry.version {
+                    if version.starts_with("link:") || version.starts_with("file:") {
+                        return Ok(VersionInfo::LocalPath {
+                            path: version.clone(),
+                        });
+                    }
+                    // Check if version itself is a git URL
+                    if let Some(git_info) = parse_git_url(version) {
+                        return Ok(git_info);
+                    }
+                    return Ok(VersionInfo::Version(version.clone()));
+                }
             }
         }
     }
@@ -329,7 +371,11 @@ fn parse_package_lock(path: &Path, package: &str) -> Result<String, LockfileErro
     if let Some(deps) = &lockfile.dependencies {
         for (name, dep) in deps {
             if normalize_node_name(name) == normalized_package {
-                return Ok(dep.version.clone());
+                // Check if version is a git URL
+                if let Some(git_info) = parse_git_url(&dep.version) {
+                    return Ok(git_info);
+                }
+                return Ok(VersionInfo::Version(dep.version.clone()));
             }
         }
     }
@@ -345,6 +391,90 @@ fn parse_package_lock(path: &Path, package: &str) -> Result<String, LockfileErro
 /// for consistent cache keys (as specified in the PRD)
 fn normalize_node_name(name: &str) -> String {
     name.to_lowercase()
+}
+
+/// Parse a version string that might be a git URL or regular version
+fn parse_node_version_string(version: &str) -> VersionInfo {
+    // Check for link/file prefixes (local deps)
+    if version.starts_with("link:") || version.starts_with("file:") {
+        return VersionInfo::LocalPath {
+            path: version.to_string(),
+        };
+    }
+
+    // Check for git URL patterns
+    if let Some(git_info) = parse_git_url(version) {
+        return git_info;
+    }
+
+    // Regular version
+    VersionInfo::Version(version.to_string())
+}
+
+/// Parse a git URL into VersionInfo::Git
+///
+/// Handles various git URL formats:
+/// - `git+https://github.com/org/repo.git#commit`
+/// - `git+ssh://git@github.com/org/repo.git#commit`
+/// - `git://github.com/org/repo#commit`
+/// - `https://github.com/org/repo.git#commit` (if contains #commit)
+fn parse_git_url(url: &str) -> Option<VersionInfo> {
+    // Check for git URL patterns
+    let is_git_url = url.starts_with("git+")
+        || url.starts_with("git://")
+        || url.starts_with("git@")
+        || (url.contains(".git") && url.contains('#'));
+
+    if !is_git_url {
+        return None;
+    }
+
+    // Extract the commit hash (after #)
+    let (url_part, commit) = if let Some(idx) = url.rfind('#') {
+        let commit = url[idx + 1..].to_string();
+        let url = url[..idx].to_string();
+        (url, commit)
+    } else {
+        // Git URL without commit - use HEAD
+        (url.to_string(), "HEAD".to_string())
+    };
+
+    // Clean up the URL
+    let clean_url = url_part
+        .strip_prefix("git+")
+        .unwrap_or(&url_part)
+        .to_string();
+
+    // Convert ssh URLs to https
+    let clean_url = if clean_url.starts_with("ssh://git@") {
+        // ssh://git@github.com/org/repo.git -> https://github.com/org/repo.git
+        clean_url.replace("ssh://git@", "https://")
+    } else if clean_url.starts_with("git@") {
+        // git@github.com:org/repo.git -> https://github.com/org/repo.git
+        clean_url
+            .replace("git@", "https://")
+            .replace(".com:", ".com/")
+            .replace(".org:", ".org/")
+    } else if clean_url.starts_with("git://") {
+        // git://github.com/org/repo -> https://github.com/org/repo
+        clean_url.replace("git://", "https://")
+    } else {
+        clean_url
+    };
+
+    Some(VersionInfo::Git {
+        url: clean_url,
+        commit,
+    })
+}
+
+/// Extract resolved URL from yarn.lock resolved line
+fn extract_yarn_resolved(line: &str) -> Option<String> {
+    let line = line.trim();
+    let resolved_part = line
+        .strip_prefix("resolved ")
+        .or_else(|| line.strip_prefix("resolved: "))?;
+    Some(resolved_part.trim().trim_matches('"').to_string())
 }
 
 #[cfg(test)]
@@ -529,6 +659,80 @@ packages:
         assert_eq!(
             parse_pnpm_package_key("@types/node@25.0.10"),
             Some(("@types/node".to_string(), "25.0.10".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_parse_git_url_https() {
+        let url = "git+https://github.com/org/repo.git#abc123";
+        let result = parse_git_url(url).unwrap();
+        assert_eq!(
+            result,
+            VersionInfo::Git {
+                url: "https://github.com/org/repo.git".to_string(),
+                commit: "abc123".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_git_url_ssh() {
+        // ssh:// URLs are converted to https://
+        let url = "git+ssh://git@github.com/org/repo.git#abc123";
+        let result = parse_git_url(url).unwrap();
+        assert_eq!(
+            result,
+            VersionInfo::Git {
+                url: "https://github.com/org/repo.git".to_string(),
+                commit: "abc123".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_git_url_git_protocol() {
+        let url = "git://github.com/org/repo#abc123";
+        let result = parse_git_url(url).unwrap();
+        assert_eq!(
+            result,
+            VersionInfo::Git {
+                url: "https://github.com/org/repo".to_string(),
+                commit: "abc123".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_git_url_not_git() {
+        let url = "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz";
+        assert!(parse_git_url(url).is_none());
+    }
+
+    #[test]
+    fn test_parse_node_version_string_regular() {
+        let result = parse_node_version_string("4.17.21");
+        assert_eq!(result, VersionInfo::Version("4.17.21".to_string()));
+    }
+
+    #[test]
+    fn test_parse_node_version_string_link() {
+        let result = parse_node_version_string("link:../local-pkg");
+        assert_eq!(
+            result,
+            VersionInfo::LocalPath {
+                path: "link:../local-pkg".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_node_version_string_file() {
+        let result = parse_node_version_string("file:../local-pkg");
+        assert_eq!(
+            result,
+            VersionInfo::LocalPath {
+                path: "file:../local-pkg".to_string(),
+            }
         );
     }
 }

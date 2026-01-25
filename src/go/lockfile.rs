@@ -4,7 +4,11 @@
 //!
 //! go.sum format: `<module path> <version>[/go.mod] <hash>`
 //! go.mod format: `require <module path> <version>` or `require (...)` blocks
+//!
+//! Note: Go modules use the module path as the repo URL, so there's no distinction
+//! between git and non-git dependencies. All Go modules are effectively "git deps".
 
+use crate::cli::VersionInfo;
 use std::fs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -29,7 +33,8 @@ pub enum LockfileError {
 /// Find the version of a Go module by searching go.sum
 ///
 /// Searches upward from the current directory for go.sum
-pub fn find_version(package: &str) -> Result<String, LockfileError> {
+/// Returns `VersionInfo::Version` - Go doesn't use git dependencies in the same way
+pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
     let lockfile = find_lockfile()?;
     parse_version_from_lockfile(&lockfile, package)
 }
@@ -59,7 +64,7 @@ fn find_lockfile() -> Result<PathBuf, LockfileError> {
 ///
 /// go.sum lines have format: `<module path> <version>[/go.mod] <hash>`
 /// We extract the module path and version (stripping /go.mod suffix if present)
-fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -91,7 +96,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, Loc
         if normalize_module_path(module_path) == normalized_package {
             // Strip 'v' prefix for our cache format
             let clean_version = version.strip_prefix('v').unwrap_or(version);
-            return Ok(clean_version.to_string());
+            return Ok(VersionInfo::Version(clean_version.to_string()));
         }
     }
 

@@ -42,6 +42,25 @@ pub enum Ecosystem {
     Swift,
 }
 
+/// Information about a resolved dependency version
+///
+/// Represents the different ways a dependency can be specified in lockfiles:
+/// - Regular version from a package registry
+/// - Git dependency with URL and commit hash
+/// - Local path dependency (should be skipped)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VersionInfo {
+    /// Regular version string (e.g., "2.31.0")
+    Version(String),
+
+    /// Git dependency with URL and commit hash
+    /// Cache path uses the commit hash as version: ~/.cache/dotdeps/<ecosystem>/<package>/<commit>/
+    Git { url: String, commit: String },
+
+    /// Local path dependency - should be skipped silently
+    LocalPath { path: String },
+}
+
 impl fmt::Display for Ecosystem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

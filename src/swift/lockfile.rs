@@ -31,6 +31,7 @@
 //! }
 //! ```
 
+use crate::cli::VersionInfo;
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -70,7 +71,7 @@ pub enum LockfileError {
 /// Find the version of a Swift package from Package.resolved
 ///
 /// Searches upward from the current directory for Package.resolved
-pub fn find_version(package: &str) -> Result<String, LockfileError> {
+pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
     let lockfile = find_lockfile()?;
     parse_version_from_lockfile(&lockfile, package)
 }
@@ -152,7 +153,7 @@ fn find_xcode_package_resolved(dir: &Path) -> Option<PathBuf> {
 }
 
 /// Parse version from Package.resolved (handles both v1 and v2 formats)
-fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, LockfileError> {
+fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
     let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
         path: path.to_path_buf(),
         source,
@@ -179,7 +180,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, Loc
                     || matches_repo_identity(&pin.repository_url, &normalized_package))
                     && let Some(version) = pin.state.version
                 {
-                    return Ok(strip_v_prefix(&version));
+                    return Ok(VersionInfo::Version(strip_v_prefix(&version)));
                 }
             }
         }
@@ -195,7 +196,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<String, Loc
                     || matches_repo_identity(&pin.location, &normalized_package))
                     && let Some(version) = pin.state.version
                 {
-                    return Ok(strip_v_prefix(&version));
+                    return Ok(VersionInfo::Version(strip_v_prefix(&version)));
                 }
             }
         }

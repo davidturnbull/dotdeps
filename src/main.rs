@@ -53,24 +53,93 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     cache::ensure_writable()?;
 
     // Resolve version: use explicit version, or look up from lockfile
-    let version = match spec.version.as_deref() {
-        Some(v) => v.to_string(),
+    let version_info = match spec.version.as_deref() {
+        Some(v) => cli::VersionInfo::Version(v.to_string()),
         None => lookup_version(spec.ecosystem, &spec.package)?,
     };
 
-    let cache_path = cache::package_dir(spec.ecosystem, &spec.package, &version)?;
+    // Handle different version types
+    match &version_info {
+        cli::VersionInfo::LocalPath { path } => {
+            // Skip local path dependencies silently
+            println!(
+                "Skipping local dependency {} (path: {})",
+                spec.package, path
+            );
+            return Ok(());
+        }
+        cli::VersionInfo::Git { url, commit } => {
+            // Git dependency - clone from URL, use commit as version
+            run_add_git_dep(spec.ecosystem, &spec.package, url, commit, &config)?;
+        }
+        cli::VersionInfo::Version(version) => {
+            // Regular version - use registry detection
+            run_add_registry_dep(spec.ecosystem, &spec.package, version, &config)?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Add a git dependency (URL + commit hash)
+fn run_add_git_dep(
+    ecosystem: cli::Ecosystem,
+    package: &str,
+    url: &str,
+    commit: &str,
+    config: &config::Config,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // For git deps, use the commit hash as the version
+    // Truncate long commit hashes for display/cache path
+    let version = if commit.len() > 12 {
+        &commit[..12]
+    } else {
+        commit
+    };
+
+    let cache_path = cache::package_dir(ecosystem, package, version)?;
 
     // Check if already cached
-    if cache::exists(spec.ecosystem, &spec.package, &version)? {
-        println!("Using cached {} {}", spec.package, version);
+    if cache::exists(ecosystem, package, version)? {
+        println!("Using cached {} {} (git)", package, version);
+    } else {
+        println!("Fetching {} {} (git)...", package, version);
+
+        // Clone at specific commit
+        let result = git::clone_at_commit(url, commit, &cache_path)?;
+        println!("  cloned at {}", result.cloned_ref);
+
+        // Run cache eviction if over limit
+        run_cache_eviction(config)?;
+    }
+
+    // Create symlink in .deps/
+    let link_path = deps::link(ecosystem, package, version)?;
+    println!("Created {}", link_path.display());
+
+    Ok(())
+}
+
+/// Add a regular registry dependency (version string)
+fn run_add_registry_dep(
+    ecosystem: cli::Ecosystem,
+    package: &str,
+    version: &str,
+    config: &config::Config,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let cache_path = cache::package_dir(ecosystem, package, version)?;
+
+    // Check if already cached
+    if cache::exists(ecosystem, package, version)? {
+        println!("Using cached {} {}", package, version);
     } else {
         // Detect repository URL (check config override first)
-        let repo_url = detect_repo_url(spec.ecosystem, &spec.package, &config)?;
+        let repo_url = detect_repo_url(ecosystem, package, config)?;
 
-        println!("Fetching {} {}...", spec.package, version);
+        println!("Fetching {} {}...", package, version);
 
         // Clone the repository
-        let result = git::clone(&repo_url, &version, &spec.package, &cache_path)?;
+        let result = git::clone(&repo_url, version, package, &cache_path)?;
 
         if result.used_default_branch {
             eprintln!(
@@ -82,11 +151,11 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Run cache eviction if over limit
-        run_cache_eviction(&config)?;
+        run_cache_eviction(config)?;
     }
 
     // Create symlink in .deps/
-    let link_path = deps::link(spec.ecosystem, &spec.package, &version)?;
+    let link_path = deps::link(ecosystem, package, version)?;
     println!("Created {}", link_path.display());
 
     Ok(())
@@ -117,7 +186,7 @@ fn run_cache_eviction(config: &config::Config) -> Result<(), Box<dyn std::error:
 fn lookup_version(
     ecosystem: cli::Ecosystem,
     package: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<cli::VersionInfo, Box<dyn std::error::Error>> {
     match ecosystem {
         cli::Ecosystem::Python => python::find_version(package).map_err(|e| e.into()),
         cli::Ecosystem::Node => node::find_version(package).map_err(|e| e.into()),

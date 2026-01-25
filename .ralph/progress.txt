@@ -24,3 +24,44 @@
 
 ### Next
 - task-002: Implement cache and .deps directory structure
+
+## Iteration 2 - task-002 & task-005: Cache and .deps directory structure
+
+### Completed
+- Implemented cache module for ~/.cache/dotdeps/<ecosystem>/<package>/<version>/
+- Implemented deps module for .deps/<ecosystem>/<package> symlinks
+- Created symlinks with absolute paths to cache
+- Windows detection with copy_dir_recursive fallback
+- List command with broken symlink detection
+- Remove command (removes symlink, preserves cache)
+- Clean command (removes entire .deps/)
+- Handles nested paths: scoped npm (@org/pkg), Go modules (github.com/org/repo/v2)
+- XDG_CACHE_HOME environment variable respected
+- 21 unit tests pass
+
+### Key decisions
+- Used `dirs` crate for cross-platform home directory detection
+- Symlinks use absolute paths for reliability
+- Cache existence checked via .git directory presence
+- Empty ecosystem directories cleaned up on remove
+- path and target fields in DepEntry kept for future debugging use
+
+### Files changed
+- Cargo.toml (added dirs dependency)
+- src/main.rs (wired up cache and deps modules)
+- src/cache.rs (new)
+- src/deps.rs (new)
+- README.md (updated status)
+- .ralph/prd.json (task-002 and task-005 passes: true)
+
+### Verified behavior
+- `dotdeps add python:requests@2.31.0` creates symlink at .deps/python/requests
+- `dotdeps add node:@org/pkg@4.17.21` handles scoped packages
+- `dotdeps add go:github.com/org/repo/v2@1.0.0` handles Go module paths
+- `dotdeps list` shows ecosystem:package@version format
+- `dotdeps list` detects broken symlinks (cache evicted)
+- `dotdeps remove python:requests` removes symlink, preserves cache
+- `dotdeps --clean` removes entire .deps/ directory
+
+### Next
+- task-003: Implement git cloning with tag resolution

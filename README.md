@@ -15,7 +15,7 @@ cargo install --path .
 ## Usage
 
 ```bash
-dotdeps add <ecosystem>:<package>[@<version>]
+dotdeps add <ecosystem>:<package>@<version>
 dotdeps remove <ecosystem>:<package>
 dotdeps list
 dotdeps --clean
@@ -32,27 +32,46 @@ dotdeps --clean
 ### Examples
 
 ```bash
-dotdeps add python:requests          # version from lockfile
-dotdeps add python:requests@2.31.0   # explicit version
+dotdeps add python:requests@2.31.0
 dotdeps add node:lodash@4.17.21
-dotdeps add node:@org/pkg            # scoped package
-dotdeps add go:github.com/org/repo/v2
+dotdeps add node:@org/pkg@1.0.0       # scoped package
+dotdeps add go:github.com/org/repo/v2@1.0.0
 dotdeps remove python:requests
 dotdeps list
-dotdeps --clean                      # remove all .deps/
+dotdeps --clean                       # remove all .deps/
+```
+
+## Directory Structure
+
+### Cache
+
+Dependencies are cached at:
+
+```
+~/.cache/dotdeps/<ecosystem>/<package>/<version>/
+```
+
+### Project
+
+Symlinks are created at:
+
+```
+.deps/<ecosystem>/<package> -> ~/.cache/dotdeps/<ecosystem>/<package>/<version>
 ```
 
 ## Status
 
-**Work in progress.** CLI argument parsing is complete. The following features are not yet implemented:
+**Work in progress.** Cache and symlink management is complete. The following features are not yet implemented:
 
-- [ ] Cache directory management
+- [x] CLI argument parsing
+- [x] Cache directory management
+- [x] Symlink/copy creation
+- [x] List dependencies with broken symlink detection
+- [x] Remove dependencies
+- [x] Clean command
 - [ ] Git cloning with tag resolution
-- [ ] Lockfile parsing (Python, Node, Go, Rust, Ruby)
-- [ ] Registry repo detection
-- [ ] Symlink/copy creation
-- [ ] List and remove commands
-- [ ] Clean command
+- [ ] Lockfile parsing for automatic version detection
+- [ ] Registry repo detection (PyPI, npm, etc.)
 
 ## License
 

@@ -26,7 +26,7 @@
         "Verify symlink points to correct cache location",
         "Verify Windows detection and copy fallback"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-003",
@@ -68,7 +68,7 @@
         "Verify list shows correct packages",
         "Verify remove deletes only the symlink, not cache"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

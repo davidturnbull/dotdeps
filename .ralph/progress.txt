@@ -195,3 +195,43 @@
 
 ### Next
 - Implement Rust ecosystem (Cargo.lock parsing, crates.io repo detection)
+
+## Iteration 6 - task-007: Rust ecosystem Cargo.lock parsing and crates.io repo detection
+
+### Completed
+- Created rust module with lockfile and crates_io submodules
+- Implemented Cargo.lock parsing for version lookup
+  - Handles TOML [[package]] array format
+  - Crate names normalized (case-insensitive, - and _ equivalent)
+- Implemented crates.io repo URL detection via JSON API
+  - Uses /api/v1/crates/{name} endpoint
+  - Includes User-Agent header for crates.io policy compliance
+  - Falls back to homepage if repository not set
+- Integrated into main.rs lookup_version and detect_repo_url
+- 68 unit tests pass
+
+### Key decisions
+- Followed same module structure as python and node ecosystems
+- Reused existing TOML and serde dependencies (no new deps needed)
+- Crate name normalization mirrors Python's approach (- and _ equivalent)
+- crates.io API requires User-Agent header, included for good citizenship
+
+### Files changed
+- src/rust.rs (new - module root)
+- src/rust/lockfile.rs (new - Cargo.lock parsing)
+- src/rust/crates_io.rs (new - crates.io API integration)
+- src/main.rs (added rust module, wired lockfile and repo detection)
+- README.md (updated status, examples, and ecosystem table)
+- .ralph/prd.json (task-007 passes: true)
+
+### Verified behavior
+- `dotdeps add rust:serde` reads version from Cargo.lock (1.0.228)
+- `dotdeps add rust:serde@1.0.228` explicit version clones at v1.0.228 tag
+- `dotdeps add cargo:clap@4.5.0` cargo alias works, clones at v4.5.0 tag
+- `dotdeps add rust:anyhow@1.0.0` clones at 1.0.0 tag (no v prefix)
+- Cache hit on second add of same package
+- `dotdeps list` shows rust:serde@1.0.228 format
+- `dotdeps remove rust:tokio` removes symlink, preserves cache
+
+### Next
+- Implement Ruby ecosystem (Gemfile.lock parsing, RubyGems repo detection)

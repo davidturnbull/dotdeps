@@ -95,7 +95,7 @@
         "Verify version detection from Cargo.lock works",
         "Verify repo detection for 'serde' package works"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-008",

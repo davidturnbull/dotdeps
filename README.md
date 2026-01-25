@@ -27,8 +27,8 @@ dotdeps --clean
 |-----------|----------------------|----------------|
 | `python`  | poetry.lock, uv.lock, requirements.txt, pyproject.toml | PyPI API |
 | `node`    | pnpm-lock.yaml, yarn.lock, package-lock.json | npm registry |
+| `rust`    | Cargo.lock           | crates.io API  |
 | `go`      | -                    | Module path |
-| `rust`    | -                    | -          |
 | `ruby`    | -                    | -          |
 
 ### Examples
@@ -45,6 +45,11 @@ dotdeps add node:lodash                  # version from lockfile
 dotdeps add node:lodash@4.17.21          # explicit version
 dotdeps add node:express@4.18.0
 dotdeps add node:@types/node             # scoped packages
+
+# Rust (fully supported)
+dotdeps add rust:serde                   # version from Cargo.lock
+dotdeps add rust:serde@1.0.228           # explicit version
+dotdeps add cargo:clap@4.5.0             # cargo alias
 
 # Go modules (fully supported)
 dotdeps add go:github.com/gin-gonic/gin@1.9.1
@@ -93,9 +98,15 @@ When no version is specified, dotdeps searches for lockfiles in this priority or
 
 Scoped packages (e.g., `@types/node`) are fully supported.
 
+## Rust Lockfile Support
+
+When no version is specified, dotdeps searches for `Cargo.lock` walking up from the current directory.
+
+Crate names are normalized for comparison (case-insensitive, `-` and `_` treated as equivalent).
+
 ## Status
 
-**Work in progress.** Python, Node.js, and Go ecosystems are fully functional. Other ecosystems pending implementation.
+**Work in progress.** Python, Node.js, Rust, and Go ecosystems are fully functional. Other ecosystems pending implementation.
 
 - [x] CLI argument parsing
 - [x] Cache directory management
@@ -109,7 +120,8 @@ Scoped packages (e.g., `@types/node`) are fully supported.
 - [x] Python ecosystem: PyPI repo URL detection
 - [x] Node ecosystem: lockfile parsing (pnpm-lock.yaml, yarn.lock, package-lock.json)
 - [x] Node ecosystem: npm registry repo URL detection
-- [ ] Rust ecosystem: Cargo.lock parsing and crates.io detection
+- [x] Rust ecosystem: Cargo.lock parsing
+- [x] Rust ecosystem: crates.io repo URL detection
 - [ ] Ruby ecosystem: Gemfile.lock parsing and RubyGems detection
 - [ ] Go ecosystem: go.sum lockfile parsing
 - [ ] Config file support (cache limits, repo overrides)

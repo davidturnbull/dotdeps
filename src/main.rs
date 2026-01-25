@@ -69,7 +69,7 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
         println!("Fetching {} {}...", spec.package, version);
 
         // Clone the repository
-        let result = git::clone(&repo_url, &version, &cache_path)?;
+        let result = git::clone(&repo_url, &version, &spec.package, &cache_path)?;
 
         if result.used_default_branch {
             eprintln!(

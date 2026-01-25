@@ -3,7 +3,9 @@
 //! Handles shallow cloning with tag resolution:
 //! 1. Try `v{version}` tag first
 //! 2. Fall back to `{version}` tag
-//! 3. Fall back to default branch (with warning)
+//! 3. Try `{package}-{version}` for monorepo crates
+//! 4. Try `{package}-v{version}` for monorepo crates
+//! 5. Fall back to default branch (with warning)
 
 use std::path::Path;
 use std::process::Command;
@@ -31,10 +33,17 @@ pub struct CloneResult {
 /// Tries tags in order:
 /// 1. `v{version}` (e.g., `v2.31.0`)
 /// 2. `{version}` (e.g., `2.31.0`)
-/// 3. Default branch (warns user)
+/// 3. `{package}-{version}` (e.g., `tokio-1.0.0`) - for monorepo crates
+/// 4. `{package}-v{version}` (e.g., `tokio-v1.0.0`) - for monorepo crates
+/// 5. Default branch (warns user)
 ///
 /// On failure, cleans up any partial clone.
-pub fn clone(repo_url: &str, version: &str, dest: &Path) -> Result<CloneResult, GitError> {
+pub fn clone(
+    repo_url: &str,
+    version: &str,
+    package: &str,
+    dest: &Path,
+) -> Result<CloneResult, GitError> {
     // Ensure parent directory exists
     if let Some(parent) = dest.parent() {
         std::fs::create_dir_all(parent).map_err(|e| GitError::CommandFailed {
@@ -42,15 +51,14 @@ pub fn clone(repo_url: &str, version: &str, dest: &Path) -> Result<CloneResult, 
         })?;
     }
 
-    // Try v{version} tag first
-    let v_tag = format!("v{}", version);
-    if let Ok(result) = try_clone_at_ref(repo_url, &v_tag, dest) {
-        return Ok(result);
-    }
+    // Build list of tags to try
+    let tags_to_try = build_tag_candidates(version, package);
 
-    // Try {version} tag
-    if let Ok(result) = try_clone_at_ref(repo_url, version, dest) {
-        return Ok(result);
+    // Try each tag in order
+    for tag in &tags_to_try {
+        if let Ok(result) = try_clone_at_ref(repo_url, tag, dest) {
+            return Ok(result);
+        }
     }
 
     // Fall back to default branch
@@ -66,6 +74,42 @@ pub fn clone(repo_url: &str, version: &str, dest: &Path) -> Result<CloneResult, 
             Err(e)
         }
     }
+}
+
+/// Build the list of tag candidates to try for a given version and package
+///
+/// Returns tags in priority order:
+/// 1. `v{version}` - most common format
+/// 2. `{version}` - used by some projects
+/// 3. `{package}-{version}` - monorepo format (e.g., tokio-1.0.0)
+/// 4. `{package}-v{version}` - monorepo format with v prefix
+fn build_tag_candidates(version: &str, package: &str) -> Vec<String> {
+    // Extract the base package name (last component of path-like names)
+    // e.g., "github.com/org/repo" -> "repo"
+    // e.g., "@scope/pkg" -> "pkg"
+    // e.g., "simple-name" -> "simple-name"
+    let base_name = extract_base_package_name(package);
+
+    vec![
+        format!("v{}", version),
+        version.to_string(),
+        format!("{}-{}", base_name, version),
+        format!("{}-v{}", base_name, version),
+    ]
+}
+
+/// Extract the base package name for monorepo tag patterns
+///
+/// For path-like packages, returns the last component:
+/// - "github.com/org/repo" -> "repo"
+/// - "@scope/pkg" -> "pkg"
+/// - "simple-name" -> "simple-name"
+fn extract_base_package_name(package: &str) -> &str {
+    // Try splitting by "/" and take the last non-empty part
+    package
+        .rsplit('/')
+        .find(|s| !s.is_empty())
+        .unwrap_or(package)
 }
 
 /// Try to clone at a specific git ref (tag or branch)
@@ -139,5 +183,44 @@ mod tests {
     fn test_cleanup_nonexistent_dir() {
         // Should not panic when directory doesn't exist
         cleanup_partial_clone(Path::new("/nonexistent/path/that/does/not/exist"));
+    }
+
+    #[test]
+    fn test_build_tag_candidates_simple_name() {
+        let tags = build_tag_candidates("1.0.0", "serde");
+        assert_eq!(tags, vec!["v1.0.0", "1.0.0", "serde-1.0.0", "serde-v1.0.0"]);
+    }
+
+    #[test]
+    fn test_build_tag_candidates_scoped_npm() {
+        let tags = build_tag_candidates("4.17.21", "@types/node");
+        assert_eq!(
+            tags,
+            vec!["v4.17.21", "4.17.21", "node-4.17.21", "node-v4.17.21"]
+        );
+    }
+
+    #[test]
+    fn test_build_tag_candidates_go_module() {
+        let tags = build_tag_candidates("1.9.1", "github.com/gin-gonic/gin");
+        assert_eq!(tags, vec!["v1.9.1", "1.9.1", "gin-1.9.1", "gin-v1.9.1"]);
+    }
+
+    #[test]
+    fn test_extract_base_package_name_simple() {
+        assert_eq!(extract_base_package_name("tokio"), "tokio");
+        assert_eq!(extract_base_package_name("serde-json"), "serde-json");
+    }
+
+    #[test]
+    fn test_extract_base_package_name_scoped() {
+        assert_eq!(extract_base_package_name("@types/node"), "node");
+        assert_eq!(extract_base_package_name("@org/pkg"), "pkg");
+    }
+
+    #[test]
+    fn test_extract_base_package_name_path() {
+        assert_eq!(extract_base_package_name("github.com/gin-gonic/gin"), "gin");
+        assert_eq!(extract_base_package_name("golang.org/x/sync"), "sync");
     }
 }

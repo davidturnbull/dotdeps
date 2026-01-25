@@ -393,3 +393,40 @@
 
 ### Next
 - All core features implemented. Remaining tasks are polish/edge cases.
+
+## Iteration 11 - task-019: Handle monorepo tag formats
+
+### Completed
+- Extended git clone tag resolution to support monorepo formats
+- Tag resolution now tries in order:
+  1. `v{version}` (e.g., `v1.0.0`) - most common format
+  2. `{version}` (e.g., `1.0.0`) - used by some projects
+  3. `{package}-{version}` (e.g., `tokio-1.0.0`) - monorepo format
+  4. `{package}-v{version}` (e.g., `tokio-v1.0.0`) - monorepo format with v prefix
+  5. Default branch (with warning)
+- Added `build_tag_candidates()` to generate all candidate tags
+- Added `extract_base_package_name()` for path-like package names
+  - `github.com/org/repo` -> `repo`
+  - `@scope/pkg` -> `pkg`
+  - `simple-name` -> `simple-name`
+- 103 unit tests pass (6 new tests)
+
+### Key decisions
+- Base package name extracted from path-like names for monorepo tags
+- Tag candidates built once and iterated (cleaner than chained if statements)
+- Existing v{version} and {version} formats remain highest priority
+- Package name passed through from main.rs to git::clone()
+
+### Files changed
+- src/git.rs (refactored clone(), added build_tag_candidates, extract_base_package_name)
+- src/main.rs (pass package name to git::clone)
+- .ralph/prd.json (task-019 passes: true)
+
+### Verified behavior
+- `dotdeps add rust:tokio@1.0.0` clones at tokio-1.0.0 tag
+- `dotdeps add rust:tokio-macros@2.0.0` clones at tokio-macros-2.0.0 tag
+- `dotdeps add rust:serde@1.0.200` clones at v1.0.200 (standard format still works)
+- `dotdeps add go:github.com/gin-gonic/gin@1.9.1` clones at v1.9.1 (Go still works)
+
+### Next
+- Implement Swift ecosystem (task-016) or git dependencies (task-012)

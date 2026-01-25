@@ -173,16 +173,65 @@
       "passes": false
     },
     {
-      "id": "task-014",
-      "category": "polish",
-      "description": "Improve error messages and user experience",
+      "id": "task-015",
+      "category": "functional",
+      "description": "Support bun.lock files for Node.js ecosystem",
       "steps": [
-        "Add disk full detection with helpful error message",
-        "Add colored output for warnings and errors",
-        "Add progress indicator for slow network operations",
-        "Verify error messages match PRD failure modes table"
+        "Parse bun.lock (JSONC format) for version lookup",
+        "Add bun.lock to lockfile priority after package-lock.json",
+        "Verify version detection from bun.lock works"
       ],
       "passes": false
+    },
+    {
+      "id": "task-016",
+      "category": "functional",
+      "description": "Implement Swift ecosystem: Package.resolved parsing and repo detection",
+      "steps": [
+        "Parse Package.resolved (v2 format) for version lookup",
+        "Extract repositoryURL from Package.resolved for repo detection",
+        "Handle GitHub shorthand URLs in Swift packages",
+        "Verify version detection from Package.resolved works",
+        "Verify repo detection for swift-argument-parser works"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-017",
+      "category": "functional",
+      "description": "Add --json flag for machine-readable output",
+      "steps": [
+        "Add --json flag to CLI argument parser",
+        "Implement JSON output for add command",
+        "Implement JSON output for list command",
+        "Implement JSON output for remove command",
+        "Verify JSON output is valid and parseable"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-018",
+      "category": "functional",
+      "description": "Add --dry-run flag to preview actions without changes",
+      "steps": [
+        "Add --dry-run flag to CLI argument parser",
+        "Implement dry-run mode for add command (show resolved version, repo URL, actions)",
+        "Skip actual cloning and symlink creation in dry-run mode",
+        "Verify dry-run shows correct information without side effects"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-019",
+      "category": "functional",
+      "description": "Handle monorepo tag formats (package-version pattern)",
+      "steps": [
+        "Add {package}-{version} to tag resolution order",
+        "Add {package}-v{version} to tag resolution order",
+        "Verify tokio-1.0.0 style tags resolve correctly for Rust monorepos",
+        "Verify fallback to other formats still works"
+      ],
+      "passes": true
     }
   ]
 }

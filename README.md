@@ -18,7 +18,8 @@ cargo install --path .
 dotdeps add <ecosystem>:<package>[@<version>]
 dotdeps remove <ecosystem>:<package>
 dotdeps list
-dotdeps --clean
+dotdeps context
+dotdeps clean
 ```
 
 ### Supported Ecosystems
@@ -65,7 +66,7 @@ dotdeps add ruby:nokogiri
 # General commands
 dotdeps remove python:requests
 dotdeps list
-dotdeps --clean                          # remove all .deps/
+dotdeps clean                            # remove all .deps/
 ```
 
 ## Directory Structure

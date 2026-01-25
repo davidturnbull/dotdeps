@@ -22,24 +22,12 @@ fn main() {
     let json_output = cli.json;
     let dry_run = cli.dry_run;
 
-    // Handle --clean flag (mutually exclusive with subcommands)
-    if cli.clean {
-        if cli.command.is_some() {
-            eprintln!("Error: --clean cannot be used with a subcommand");
-            std::process::exit(1);
-        }
-        if let Err(e) = run_clean(json_output, dry_run) {
-            eprintln!("Error: {}", e);
-            std::process::exit(1);
-        }
-        return;
-    }
-
     let result = match cli.command {
         Some(Command::Add { spec }) => run_add(spec, json_output, dry_run),
         Some(Command::Remove { spec }) => run_remove(spec, json_output, dry_run),
         Some(Command::List) => run_list(json_output),
         Some(Command::Context) => run_context(),
+        Some(Command::Clean) => run_clean(json_output, dry_run),
         None => {
             eprintln!("No command specified. Use --help for usage information.");
             std::process::exit(1);

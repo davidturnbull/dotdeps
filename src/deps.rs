@@ -70,6 +70,12 @@ pub fn package_path(ecosystem: Ecosystem, package: &str) -> PathBuf {
     deps_dir().join(ecosystem.to_string()).join(package)
 }
 
+/// Returns the path where a symlink would be created for a package.
+/// This is an alias for `package_path` used for dry-run mode.
+pub fn link_path(ecosystem: Ecosystem, package: &str) -> PathBuf {
+    package_path(ecosystem, package)
+}
+
 /// Check if running on Windows
 fn is_windows() -> bool {
     cfg!(target_os = "windows")

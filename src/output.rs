@@ -18,6 +18,8 @@ pub struct AddResult {
     pub cloned_ref: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub dry_run: bool,
 }
 
 /// Result of a remove operation
@@ -26,6 +28,8 @@ pub struct RemoveResult {
     pub ecosystem: String,
     pub package: String,
     pub removed: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub dry_run: bool,
 }
 
 /// Result of a list operation
@@ -48,6 +52,8 @@ pub struct ListEntry {
 #[derive(Debug, Serialize)]
 pub struct CleanResult {
     pub cleaned: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub dry_run: bool,
 }
 
 /// Result of skipping a local dependency
@@ -77,6 +83,7 @@ impl AddResult {
             cached,
             cloned_ref: None,
             warning: None,
+            dry_run: false,
         }
     }
 
@@ -89,6 +96,11 @@ impl AddResult {
         self.warning = Some(warning.to_string());
         self
     }
+
+    pub fn with_dry_run(mut self) -> Self {
+        self.dry_run = true;
+        self
+    }
 }
 
 impl RemoveResult {
@@ -97,7 +109,13 @@ impl RemoveResult {
             ecosystem: ecosystem.to_string(),
             package: package.to_string(),
             removed,
+            dry_run: false,
         }
+    }
+
+    pub fn with_dry_run(mut self) -> Self {
+        self.dry_run = true;
+        self
     }
 }
 

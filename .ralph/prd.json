@@ -219,7 +219,7 @@
         "Skip actual cloning and symlink creation in dry-run mode",
         "Verify dry-run shows correct information without side effects"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-019",

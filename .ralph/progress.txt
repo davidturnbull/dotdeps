@@ -603,3 +603,44 @@
 
 ### Next
 - Implement --dry-run flag (task-018)
+
+## Iteration 16 - task-018: Add --dry-run flag for preview mode
+
+### Completed
+- Added --dry-run global flag to CLI argument parser
+- Implemented dry-run mode for add, remove, and clean commands
+- Skip cache verification in dry-run mode
+- Skip git cloning in dry-run mode (shows "would clone from" message)
+- Skip symlink creation in dry-run mode
+- Skip actual removal in remove command dry-run mode
+- Skip actual clean in clean command dry-run mode
+- Human-readable output prefixed with [dry-run] in dry-run mode
+- JSON output includes dry_run: true field when in dry-run mode
+- Added link_path function to deps module for calculating path without side effects
+- 130 unit tests pass
+
+### Key decisions
+- dry_run flag is global (works with all subcommands and --clean)
+- Human-readable output uses "[dry-run] " prefix for consistency
+- JSON output adds dry_run field (skipped when false)
+- Dry-run still performs version lookup and repo URL detection to verify they work
+- Cache check still works in dry-run (shows "Using cached" if already cached)
+
+### Files changed
+- src/cli.rs (added --dry-run flag with global = true)
+- src/output.rs (added dry_run field to AddResult, RemoveResult, CleanResult)
+- src/main.rs (added dry_run parameter threading, conditional output and side effects)
+- src/deps.rs (added link_path function)
+- .ralph/prd.json (task-018 passes: true)
+
+### Verified behavior
+- `dotdeps add rust:serde --dry-run` shows version, repo URL, and "Would create" message
+- No .deps directory created in dry-run mode
+- `dotdeps add rust:serde --dry-run --json` includes dry_run: true
+- `dotdeps remove rust:serde --dry-run` shows "Would remove" message, symlink still exists
+- `dotdeps --clean --dry-run` shows "Would remove .deps/", directory still exists
+- Works with --json flag to get machine-readable dry-run output
+- Cache hit detection works correctly in dry-run mode
+
+### Next
+- All tasks complete! CLI is 100% implemented.

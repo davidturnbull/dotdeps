@@ -17,6 +17,10 @@ pub struct Cli {
     /// Output results as JSON for machine-readable output
     #[arg(long, global = true)]
     pub json: bool,
+
+    /// Preview actions without making changes
+    #[arg(long, global = true)]
+    pub dry_run: bool,
 }
 
 #[derive(Subcommand, Debug)]

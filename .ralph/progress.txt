@@ -65,3 +65,39 @@
 
 ### Next
 - task-003: Implement git cloning with tag resolution
+
+## Iteration 3 - task-003: Git cloning with tag resolution
+
+### Completed
+- Created git module with shallow clone functionality (--depth 1)
+- Implemented tag resolution order: v{version} -> {version} -> default branch
+- Added warning message when falling back to default branch
+- Implemented cleanup of partial clone directories on failure
+- Added Go ecosystem repo URL detection from module path
+  - github.com/* -> https://github.com/*.git
+  - golang.org/x/* -> https://go.googlesource.com/*.git
+- 22 unit tests pass
+
+### Key decisions
+- Used std::process::Command for git operations (no external crate needed)
+- CloneResult struct returns whether default branch was used and which ref was cloned
+- Go modules get special treatment since package path IS the repo URL
+- Other ecosystems return clear error message directing to config.json override
+- Parent directories left in cache on failure (empty, no harm)
+
+### Files changed
+- src/git.rs (new)
+- src/main.rs (wired in git module, added detect_repo_url function)
+- README.md (updated status)
+- .ralph/prd.json (task-003 passes: true)
+
+### Verified behavior
+- `dotdeps add go:github.com/gin-gonic/gin@1.9.1` clones at v1.9.1 tag
+- `dotdeps add go:golang.org/x/sync@0.6.0` clones from go.googlesource.com
+- Cache hit on second add of same package
+- Nonexistent tag falls back to default branch with warning
+- Clone failure cleans up partial directory
+- Non-Go ecosystems show clear error about missing repo detection
+
+### Next
+- task-004: Implement Python ecosystem lockfile parsing and PyPI repo detection

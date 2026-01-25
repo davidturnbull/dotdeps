@@ -1,6 +1,7 @@
 mod cache;
 mod cli;
 mod deps;
+mod git;
 
 use clap::Parser;
 use cli::{Cli, Command};
@@ -56,15 +57,22 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     if cache::exists(spec.ecosystem, &spec.package, version)? {
         println!("Using cached {} {}", spec.package, version);
     } else {
-        // TODO: Clone from repository
+        // Detect repository URL
+        let repo_url = detect_repo_url(spec.ecosystem, &spec.package)?;
+
         println!("Fetching {} {}...", spec.package, version);
 
-        // For now, just create the cache directory as a placeholder
-        // This will be replaced with actual git cloning in task-003
-        std::fs::create_dir_all(&cache_path)?;
-        std::fs::create_dir_all(cache_path.join(".git"))?;
+        // Clone the repository
+        let result = git::clone(&repo_url, version, &cache_path)?;
 
-        println!("  (placeholder - git cloning not yet implemented)");
+        if result.used_default_branch {
+            eprintln!(
+                "Warning: No tag found for version {}, cloned {}",
+                version, result.cloned_ref
+            );
+        } else {
+            println!("  cloned at {}", result.cloned_ref);
+        }
     }
 
     // Create symlink in .deps/
@@ -72,6 +80,48 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     println!("Created {}", link_path.display());
 
     Ok(())
+}
+
+/// Detect the repository URL for a package
+///
+/// For now, this only handles Go modules (where the package path is the repo)
+/// and returns an error for other ecosystems until task-004 implements registry lookups.
+fn detect_repo_url(
+    ecosystem: cli::Ecosystem,
+    package: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    match ecosystem {
+        cli::Ecosystem::Go => {
+            // Go modules: package path is typically the repo
+            // e.g., github.com/gin-gonic/gin -> https://github.com/gin-gonic/gin
+            if package.starts_with("github.com/") {
+                // Strip any version suffix like /v2
+                let repo_path = package
+                    .strip_suffix("/v2")
+                    .or_else(|| package.strip_suffix("/v3"))
+                    .or_else(|| package.strip_suffix("/v4"))
+                    .or_else(|| package.strip_suffix("/v5"))
+                    .unwrap_or(package);
+                Ok(format!("https://{}.git", repo_path))
+            } else if package.starts_with("golang.org/x/") {
+                // golang.org/x/* -> go.googlesource.com/[name]
+                let name = package.strip_prefix("golang.org/x/").unwrap();
+                Ok(format!("https://go.googlesource.com/{}.git", name))
+            } else {
+                Err(format!(
+                    "Repository URL not found for go:{}. Add override to ~/.config/dotdeps/config.json",
+                    package
+                ).into())
+            }
+        }
+        _ => {
+            // Other ecosystems need registry lookup (task-004)
+            Err(format!(
+                "Repository detection for {} not yet implemented. Specify version explicitly or add override to ~/.config/dotdeps/config.json",
+                ecosystem
+            ).into())
+        }
+    }
 }
 
 fn run_remove(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {

@@ -32,14 +32,17 @@ dotdeps --clean
 ### Examples
 
 ```bash
-dotdeps add python:requests@2.31.0
-dotdeps add node:lodash@4.17.21
-dotdeps add node:@org/pkg@1.0.0       # scoped package
-dotdeps add go:github.com/org/repo/v2@1.0.0
-dotdeps remove python:requests
+# Go modules (fully supported)
+dotdeps add go:github.com/gin-gonic/gin@1.9.1
+dotdeps add go:golang.org/x/sync@0.6.0
+
+# General commands
+dotdeps remove go:github.com/gin-gonic/gin
 dotdeps list
 dotdeps --clean                       # remove all .deps/
 ```
+
+**Note:** Other ecosystems (python, node, rust, ruby) require registry repo detection, which is not yet implemented.
 
 ## Directory Structure
 
@@ -61,7 +64,7 @@ Symlinks are created at:
 
 ## Status
 
-**Work in progress.** Cache and symlink management is complete. The following features are not yet implemented:
+**Work in progress.** Git cloning is functional for Go modules. Other ecosystems pending registry detection implementation.
 
 - [x] CLI argument parsing
 - [x] Cache directory management
@@ -69,9 +72,10 @@ Symlinks are created at:
 - [x] List dependencies with broken symlink detection
 - [x] Remove dependencies
 - [x] Clean command
-- [ ] Git cloning with tag resolution
+- [x] Git cloning with tag resolution (shallow clone, --depth 1)
+- [x] Go ecosystem: repo URL detection from module path
 - [ ] Lockfile parsing for automatic version detection
-- [ ] Registry repo detection (PyPI, npm, etc.)
+- [ ] Registry repo detection for Python/Node/Rust/Ruby
 
 ## License
 

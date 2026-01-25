@@ -39,7 +39,7 @@
         "Delete partial directory on clone failure",
         "Verify cloning works for a real package (e.g., requests)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-004",

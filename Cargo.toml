@@ -1,0 +1,11 @@
+[package]
+name = "dotdeps"
+version = "0.1.0"
+edition = "2024"
+description = "CLI tool that fetches dependency source code for LLM context"
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+thiserror = "2"

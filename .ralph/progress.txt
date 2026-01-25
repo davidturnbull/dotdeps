@@ -1,0 +1,26 @@
+## Iteration 1 - task-001: CLI argument parsing
+
+### Completed
+- Set up Cargo project with Rust 2024 edition
+- Implemented CLI argument parsing with clap derive macros
+- Supports: add, remove, list subcommands and --clean flag
+- Parses ecosystem:package@version syntax correctly
+- Handles scoped packages (@org/pkg), Go module paths, version prefixes (v)
+- Normalizes package names to lowercase and strips v prefix from versions
+- 12 unit tests pass
+
+### Key decisions
+- Used clap derive API for declarative argument parsing
+- DepSpec struct with FromStr for parsing dependency specifications
+- Ecosystem enum with FromStr supporting aliases (npm->node, cargo->rust, etc.)
+- Handle --clean vs subcommand conflict in main() rather than clap attribute
+
+### Files changed
+- Cargo.toml (new)
+- src/main.rs (new)
+- src/cli.rs (new)
+- README.md (new)
+- .ralph/prd.json (updated task-001 passes: true)
+
+### Next
+- task-002: Implement cache and .deps directory structure

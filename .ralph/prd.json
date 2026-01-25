@@ -1,3 +1,74 @@
 {
-  "tasks": []
+  "tasks": [
+    {
+      "id": "task-001",
+      "category": "architecture",
+      "description": "Set up Cargo project with CLI argument parsing (clap) and basic command structure",
+      "steps": [
+        "Create Cargo.toml with Rust 2024 edition and clap dependency",
+        "Create src/main.rs with CLI argument parsing for add, remove, list, --clean",
+        "Parse ecosystem:package@version syntax",
+        "Verify `dotdeps add python:requests@2.31.0` parses correctly",
+        "Verify `dotdeps list` and `dotdeps remove` commands are recognized",
+        "Verify `dotdeps --clean` flag works"
+      ],
+      "passes": true
+    },
+    {
+      "id": "task-002",
+      "category": "architecture",
+      "description": "Implement cache and .deps directory structure with symlink/copy creation",
+      "steps": [
+        "Create cache directory at ~/.cache/dotdeps/<ecosystem>/<package>/<version>/",
+        "Create .deps/<ecosystem>/<package> symlinks (or copies on Windows)",
+        "Normalize package names to lowercase",
+        "Normalize versions (strip v prefix)",
+        "Verify symlink points to correct cache location",
+        "Verify Windows detection and copy fallback"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-003",
+      "category": "architecture",
+      "description": "Implement git cloning with tag resolution",
+      "steps": [
+        "Shallow clone repos with --depth 1",
+        "Try tag v{version} first, then {version}, then default branch",
+        "Warn user when falling back to default branch",
+        "Delete partial directory on clone failure",
+        "Verify cloning works for a real package (e.g., requests)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-004",
+      "category": "functional",
+      "description": "Implement Python ecosystem: lockfile parsing and PyPI repo detection",
+      "steps": [
+        "Parse poetry.lock for version lookup",
+        "Parse uv.lock for version lookup",
+        "Parse requirements.txt for version lookup",
+        "Parse pyproject.toml for version lookup",
+        "Detect repo URL from PyPI project_urls",
+        "Verify version detection from poetry.lock works",
+        "Verify repo detection for 'requests' package works"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-005",
+      "category": "functional",
+      "description": "Implement list and remove commands with broken symlink detection",
+      "steps": [
+        "List all symlinks in .deps/ with ecosystem:package@version format",
+        "Detect and warn on broken symlinks (cache evicted)",
+        "Remove symlinks by ecosystem:package",
+        "Leave .deps/ directory even if empty",
+        "Verify list shows correct packages",
+        "Verify remove deletes only the symlink, not cache"
+      ],
+      "passes": false
+    }
+  ]
 }

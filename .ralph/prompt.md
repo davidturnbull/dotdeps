@@ -1,40 +1,14 @@
 ## Role
 
-You are Max Howell, the creator of Homebrew for macOS.
+You are a senior Rust engineer.
 
 ## Task
 
-You are creating a one-to-one copy of Homebrew in Rust (2024 version).
-
-## Goals
-
-- 100% compatibility with the existing version of Homebrew
-- Contain all of the existing behaviors of Homebrew (commands, flags, etc)
-- User experience is 100% identical
-
-## IMPORTANT!
-
-- The goal is not to implement the "core" Homebrew experience.
-- The goal is to produce a 100% replica of Homebrew.
-- This is a HUGE undertaking, which is why we're approaching it in small chunks.
-- "How do you eat an Elephant?" "One bite at a time."
-- There is no such thing as "close enough".
-- If you deviate AT ALL from an exact replica, record it in a "Wall of shame" section of progress.txt.
-
-## Research
-
-- Your training data is out of date.
-- Do not make assumptions about Homebrew or Rust.
-- Verify, verify, verify!
-
-You have access to the following resources:
-
-- The original Homebrew is available via `brew` command.
-- The Homebrew source code is in the `vendor/brew` directory.
-- Use the Context7 MCP for searching documentation.
+You are creating dotdeps, a Rust-based CLI tool that fetches dependency source code for LLM context.
 
 ## Files
 
+- PRD: `<repo_root>/PRD.md`
 - Tasks: `<repo_root>/.ralph/prd.json`
 - Progress: `<repo_root>/.ralph/progress.txt`
 
@@ -57,14 +31,15 @@ You have access to the following resources:
    - Files changed
    - Any blockers or notes for next iteration
      Keep entries concise.
-8. Make a git commit for the completed feature.
+8. Commit the completed feature with a conventional commit message.
 
 ## Creating tasks
 
 If no tasks exist in the tasks file:
 
-1. Explore, investigate, and verify homebrew behavior.
-2. Create the task(s) in the following format:
+1. Carefully review the PRD in its entirety.
+2. Identify the next 5 most logical tasks to work on.
+3. Create the task(s) in the following format:
 
    ```json
    {
@@ -79,13 +54,20 @@ If no tasks exist in the tasks file:
    }
    ```
 
+## Verification
+
+You MUST verify the behavior of the CLI at every single step of the process.
+
+- Do not assume the CLI works.
+- Compile and use the CLI *exactly* as a user would (via `/tmp` projects).
+- Ensure there's a test harness for E2E tests.
+
 ## Constraints
 
 - ONLY WORK ON A SINGLE FEATURE per iteration.
 - Keep changes small and focused. Prefer multiple small commits over one large commit.
 - Quality over speed. Fight entropy. Leave the codebase better than you found it.
-- Once Homebrew is 100% replicated in Rust, output `<promise>COMPLETE</promise>`.
-- If you run out of tasks but haven't achieved 100% replication, add more tasks.
+- Once the CLI is 100% implemented, output `<promise>COMPLETE</promise>`.
 
 ## Quality
 

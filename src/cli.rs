@@ -39,6 +39,7 @@ pub enum Ecosystem {
     Go,
     Rust,
     Ruby,
+    Swift,
 }
 
 impl fmt::Display for Ecosystem {
@@ -49,6 +50,7 @@ impl fmt::Display for Ecosystem {
             Ecosystem::Go => write!(f, "go"),
             Ecosystem::Rust => write!(f, "rust"),
             Ecosystem::Ruby => write!(f, "ruby"),
+            Ecosystem::Swift => write!(f, "swift"),
         }
     }
 }
@@ -63,8 +65,9 @@ impl FromStr for Ecosystem {
             "go" | "golang" => Ok(Ecosystem::Go),
             "rust" | "cargo" => Ok(Ecosystem::Rust),
             "ruby" | "gem" | "rubygems" => Ok(Ecosystem::Ruby),
+            "swift" | "swiftpm" | "spm" => Ok(Ecosystem::Swift),
             _ => Err(format!(
-                "Unknown ecosystem '{}'. Supported: python, node, go, rust, ruby",
+                "Unknown ecosystem '{}'. Supported: python, node, go, rust, ruby, swift",
                 s
             )),
         }
@@ -206,6 +209,9 @@ mod tests {
         assert_eq!("golang".parse::<Ecosystem>().unwrap(), Ecosystem::Go);
         assert_eq!("cargo".parse::<Ecosystem>().unwrap(), Ecosystem::Rust);
         assert_eq!("gem".parse::<Ecosystem>().unwrap(), Ecosystem::Ruby);
+        assert_eq!("swift".parse::<Ecosystem>().unwrap(), Ecosystem::Swift);
+        assert_eq!("swiftpm".parse::<Ecosystem>().unwrap(), Ecosystem::Swift);
+        assert_eq!("spm".parse::<Ecosystem>().unwrap(), Ecosystem::Swift);
     }
 
     #[test]

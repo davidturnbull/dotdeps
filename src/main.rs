@@ -8,6 +8,7 @@ mod node;
 mod python;
 mod ruby;
 mod rust;
+mod swift;
 
 use clap::Parser;
 use cli::{Cli, Command};
@@ -123,6 +124,7 @@ fn lookup_version(
         cli::Ecosystem::Go => go::find_version(package).map_err(|e| e.into()),
         cli::Ecosystem::Rust => rust::find_version(package).map_err(|e| e.into()),
         cli::Ecosystem::Ruby => ruby::find_version(package).map_err(|e| e.into()),
+        cli::Ecosystem::Swift => swift::find_version(package).map_err(|e| e.into()),
     }
 }
 
@@ -146,6 +148,7 @@ fn detect_repo_url(
         cli::Ecosystem::Go => detect_go_repo_url(package),
         cli::Ecosystem::Rust => rust::detect_repo_url(package).map_err(|e| e.into()),
         cli::Ecosystem::Ruby => ruby::detect_repo_url(package).map_err(|e| e.into()),
+        cli::Ecosystem::Swift => swift::detect_repo_url(package).map_err(|e| e.into()),
     }
 }
 

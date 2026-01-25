@@ -430,3 +430,46 @@
 
 ### Next
 - Implement Swift ecosystem (task-016) or git dependencies (task-012)
+
+## Iteration 12 - task-016: Swift ecosystem Package.resolved parsing and repo detection
+
+### Completed
+- Added Swift to Ecosystem enum with aliases: swift, swiftpm, spm
+- Created swift module with lockfile submodule
+- Implemented Package.resolved parsing for both v1 and v2 formats
+  - v1: object.pins[].package, repositoryURL, state.version
+  - v2: pins[].identity, location, state.version
+- Repo URL detection reads directly from Package.resolved (no registry API needed)
+- Finds Package.resolved in multiple locations:
+  - Direct: Package.resolved
+  - Xcode project: *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  - Xcode workspace: *.xcworkspace/xcshareddata/swiftpm/Package.resolved
+- Package identity matching supports both name and repo URL identity
+- 111 unit tests pass (8 new Swift tests)
+
+### Key decisions
+- Swift repo URLs come from lockfile, not a registry API (simpler, more reliable)
+- Support both v1 and v2 Package.resolved formats for backwards compatibility
+- Package identity matching is flexible: matches by identity field or repo name
+- Xcode project detection scans for .xcodeproj and .xcworkspace directories
+
+### Files changed
+- src/cli.rs (added Swift ecosystem with aliases)
+- src/swift.rs (new - module root)
+- src/swift/lockfile.rs (new - Package.resolved parsing)
+- src/main.rs (added swift module, wired lookup_version and detect_repo_url)
+- .ralph/prd.json (task-016 passes: true)
+
+### Verified behavior
+- `dotdeps add swift:swift-argument-parser` reads version from Package.resolved
+- `dotdeps add swift:swift-collections` works with v2 format
+- `dotdeps add swift:swift-nio` works with v1 format
+- `dotdeps add swiftpm:...` and `dotdeps add spm:...` aliases work
+- Xcode project Package.resolved detection works
+- `dotdeps list` shows swift:package@version format
+- `dotdeps remove swift:package` removes symlink correctly
+- Cache hit on second add of same package
+- Explicit version overrides lockfile version
+
+### Next
+- Implement git dependencies (task-012), local path deps (task-013), or bun.lock (task-015)

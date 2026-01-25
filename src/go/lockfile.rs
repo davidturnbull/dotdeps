@@ -9,6 +9,7 @@
 //! between git and non-git dependencies. All Go modules are effectively "git deps".
 
 use crate::cli::VersionInfo;
+use crate::lockfile::find_nearest_file;
 use std::fs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -35,29 +36,39 @@ pub enum LockfileError {
 /// Searches upward from the current directory for go.sum
 /// Returns `VersionInfo::Version` - Go doesn't use git dependencies in the same way
 pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
-    let lockfile = find_lockfile()?;
+    let lockfile = find_lockfile_path()?;
     parse_version_from_lockfile(&lockfile, package)
 }
 
 /// Find the nearest go.sum by walking up from current directory
-fn find_lockfile() -> Result<PathBuf, LockfileError> {
-    let cwd = std::env::current_dir().map_err(|_| LockfileError::NotFound)?;
+pub fn find_lockfile_path() -> Result<PathBuf, LockfileError> {
+    find_nearest_file(&["go.sum"]).ok_or(LockfileError::NotFound)
+}
 
-    let mut dir = cwd.as_path();
-    loop {
-        let path = dir.join("go.sum");
-        if path.exists() {
-            return Ok(path);
-        }
-
-        // Move to parent directory
-        match dir.parent() {
-            Some(parent) => dir = parent,
-            None => break,
+/// List direct dependencies from go.mod if present, otherwise fall back to go.sum.
+pub fn list_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    if let Some(parent) = path.parent() {
+        let go_mod = parent.join("go.mod");
+        if go_mod.exists() {
+            let deps = parse_go_mod_direct_dependencies(&go_mod)?;
+            let mut unique = deps
+                .into_iter()
+                .map(|d| normalize_module_path(&d))
+                .collect::<Vec<_>>();
+            unique.sort();
+            unique.dedup();
+            return Ok(unique);
         }
     }
 
-    Err(LockfileError::NotFound)
+    let deps = list_modules_from_go_sum(path)?;
+    let mut unique = deps
+        .into_iter()
+        .map(|d| normalize_module_path(&d))
+        .collect::<Vec<_>>();
+    unique.sort();
+    unique.dedup();
+    Ok(unique)
 }
 
 /// Parse version from go.sum
@@ -105,6 +116,89 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
     })
 }
 
+fn parse_go_mod_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let mut deps = Vec::new();
+    let mut in_require_block = false;
+
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with("//") {
+            continue;
+        }
+
+        if line.starts_with("require ") {
+            let rest = line.trim_start_matches("require").trim();
+            if rest == "(" {
+                in_require_block = true;
+                continue;
+            }
+
+            if let Some(dep) = parse_go_mod_require_line(rest) {
+                deps.push(dep);
+            }
+            continue;
+        }
+
+        if in_require_block {
+            if line.starts_with(')') {
+                in_require_block = false;
+                continue;
+            }
+            if let Some(dep) = parse_go_mod_require_line(line) {
+                deps.push(dep);
+            }
+        }
+    }
+
+    Ok(deps)
+}
+
+fn parse_go_mod_require_line(line: &str) -> Option<String> {
+    let mut parts = line.splitn(2, "//");
+    let code = parts.next()?.trim();
+    let comment = parts.next().unwrap_or("");
+    if comment.contains("indirect") {
+        return None;
+    }
+
+    let mut code_parts = code.split_whitespace();
+    let module = code_parts.next()?.trim();
+    if module.is_empty() {
+        None
+    } else {
+        Some(module.to_string())
+    }
+}
+
+fn list_modules_from_go_sum(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let mut deps = Vec::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with("//") {
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 2 {
+            continue;
+        }
+
+        deps.push(parts[0].to_string());
+    }
+
+    Ok(deps)
+}
+
 /// Normalize Go module path for comparison
 ///
 /// Go module paths are case-sensitive, but we normalize for consistent matching.
@@ -118,6 +212,20 @@ fn normalize_module_path(path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn write_temp_file(filename: &str, content: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("dotdeps_go_test_{}", nanos));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(filename);
+        fs::write(&path, content).unwrap();
+        path
+    }
 
     #[test]
     fn test_parse_go_sum_basic() {
@@ -215,5 +323,24 @@ github.com/indirect/dep v2.0.0 h1:indirect=
 
         assert!(lines.contains(&"github.com/direct/dep"));
         assert!(lines.contains(&"github.com/indirect/dep"));
+    }
+
+    #[test]
+    fn test_parse_go_mod_direct_dependencies() {
+        let content = r#"
+module example.com/test
+
+require github.com/gin-gonic/gin v1.9.1
+
+require (
+  golang.org/x/sync v0.6.0
+  github.com/indirect/dep v1.2.3 // indirect
+)
+"#;
+        let path = write_temp_file("go.mod", content);
+        let deps = parse_go_mod_direct_dependencies(&path).unwrap();
+        assert!(deps.contains(&"github.com/gin-gonic/gin".to_string()));
+        assert!(deps.contains(&"golang.org/x/sync".to_string()));
+        assert!(!deps.contains(&"github.com/indirect/dep".to_string()));
     }
 }

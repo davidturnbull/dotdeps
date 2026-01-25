@@ -13,6 +13,7 @@
 //! - Local path dependencies: `[package.source] type = "directory"`
 
 use crate::cli::VersionInfo;
+use crate::lockfile::find_nearest_file;
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -48,62 +49,65 @@ pub enum LockfileError {
 /// - `Git { url, commit }` for git dependencies
 /// - `LocalPath { path }` for local directory dependencies
 pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
-    let lockfile = find_lockfile()?;
+    let lockfile = find_lockfile_path()?;
     parse_version_from_lockfile(&lockfile, package)
 }
 
-/// Lockfile types in priority order
-#[derive(Debug, Clone, Copy)]
-enum LockfileType {
-    PoetryLock,
-    UvLock,
-    RequirementsTxt,
-    PyprojectToml,
-}
-
-impl LockfileType {
-    fn filename(&self) -> &'static str {
-        match self {
-            LockfileType::PoetryLock => "poetry.lock",
-            LockfileType::UvLock => "uv.lock",
-            LockfileType::RequirementsTxt => "requirements.txt",
-            LockfileType::PyprojectToml => "pyproject.toml",
-        }
-    }
-
-    fn priority_order() -> &'static [LockfileType] {
-        &[
-            LockfileType::PoetryLock,
-            LockfileType::UvLock,
-            LockfileType::RequirementsTxt,
-            LockfileType::PyprojectToml,
-        ]
-    }
-}
-
 /// Find the nearest lockfile by walking up from current directory
-fn find_lockfile() -> Result<PathBuf, LockfileError> {
-    let cwd = std::env::current_dir().map_err(|_| LockfileError::NotFound)?;
+pub fn find_lockfile_path() -> Result<PathBuf, LockfileError> {
+    find_nearest_file(&LOCKFILE_PRIORITY).ok_or(LockfileError::NotFound)
+}
 
-    let mut dir = cwd.as_path();
-    loop {
-        // Check for each lockfile type in priority order
-        for lockfile_type in LockfileType::priority_order() {
-            let path = dir.join(lockfile_type.filename());
-            if path.exists() {
-                return Ok(path);
+/// List direct dependencies from a lockfile or manifest.
+///
+/// - poetry.lock/uv.lock: prefer sibling pyproject.toml if present, otherwise list all packages
+/// - requirements.txt: list each requirement name (ignores URL-only entries)
+/// - pyproject.toml: list dependencies from [tool.poetry.dependencies] and [project.dependencies]
+pub fn list_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let mut deps = Vec::new();
+
+    match filename {
+        "poetry.lock" | "uv.lock" => {
+            if let Some(parent) = path.parent() {
+                let pyproject = parent.join("pyproject.toml");
+                if pyproject.exists() {
+                    deps = parse_pyproject_dependencies(&pyproject)?;
+                } else {
+                    deps = list_all_packages_from_toml_lock(path)?;
+                }
             }
         }
-
-        // Move to parent directory
-        match dir.parent() {
-            Some(parent) => dir = parent,
-            None => break,
+        "requirements.txt" => {
+            deps = parse_requirements_names(path)?;
+        }
+        "pyproject.toml" => {
+            deps = parse_pyproject_dependencies(path)?;
+        }
+        _ => {
+            return Err(LockfileError::Parse {
+                path: path.to_path_buf(),
+                details: format!("Unknown lockfile type: {}", filename),
+            });
         }
     }
 
-    Err(LockfileError::NotFound)
+    let mut unique: Vec<String> = deps
+        .into_iter()
+        .map(|d| normalize_python_name(&d))
+        .collect();
+    unique.sort();
+    unique.dedup();
+    Ok(unique)
 }
+
+/// Lockfile priority order
+const LOCKFILE_PRIORITY: [&str; 4] = [
+    "poetry.lock",
+    "uv.lock",
+    "requirements.txt",
+    "pyproject.toml",
+];
 
 /// Parse version from a lockfile
 fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
@@ -117,6 +121,143 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
             path: path.to_path_buf(),
             details: format!("Unknown lockfile type: {}", filename),
         }),
+    }
+}
+
+/// List all packages from a poetry.lock or uv.lock file
+fn list_all_packages_from_toml_lock(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let lockfile: TomlLockfile = toml::from_str(&content).map_err(|e| LockfileError::Parse {
+        path: path.to_path_buf(),
+        details: e.to_string(),
+    })?;
+
+    let mut deps = Vec::new();
+    let packages = lockfile.package.unwrap_or_default();
+    for pkg in packages {
+        if let Some(source) = &pkg.source
+            && matches!(source.source_type.as_deref(), Some("directory"))
+        {
+            continue;
+        }
+        deps.push(pkg.name);
+    }
+
+    Ok(deps)
+}
+
+/// Parse dependency names from requirements.txt
+fn parse_requirements_names(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let mut deps = Vec::new();
+    for line in content.lines() {
+        if let Some(name) = parse_requirement_name(line) {
+            deps.push(name);
+        }
+    }
+
+    Ok(deps)
+}
+
+/// Parse a requirement line into a package name (if present)
+fn parse_requirement_name(line: &str) -> Option<String> {
+    let line = line.split('#').next()?.trim();
+    if line.is_empty() || line.starts_with('-') {
+        return None;
+    }
+
+    let line = line.split(';').next()?.trim();
+    if line.is_empty() {
+        return None;
+    }
+
+    if line.starts_with("git+")
+        || line.starts_with("http://")
+        || line.starts_with("https://")
+        || line.starts_with("ssh://")
+    {
+        return None;
+    }
+
+    if let Some((name, _)) = line.split_once(" @ ") {
+        let name = strip_extras(name).trim().to_string();
+        return if name.is_empty() { None } else { Some(name) };
+    }
+
+    let line = strip_extras(line);
+
+    let version_patterns = ["==", "~=", ">=", "<=", ">", "<", "!="];
+    for pattern in version_patterns {
+        if let Some(idx) = line.find(pattern) {
+            let name = line[..idx].trim().to_string();
+            return if name.is_empty() { None } else { Some(name) };
+        }
+    }
+
+    let name = line.split_whitespace().next()?.trim().to_string();
+    if name.is_empty() { None } else { Some(name) }
+}
+
+/// Parse dependency names from pyproject.toml
+fn parse_pyproject_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let doc: toml::Value = toml::from_str(&content).map_err(|e| LockfileError::Parse {
+        path: path.to_path_buf(),
+        details: e.to_string(),
+    })?;
+
+    let mut deps = Vec::new();
+
+    if let Some(table) = doc
+        .get("tool")
+        .and_then(|v| v.get("poetry"))
+        .and_then(|v| v.get("dependencies"))
+        .and_then(|v| v.as_table())
+    {
+        for (name, value) in table {
+            if name == "python" {
+                continue;
+            }
+            if is_poetry_path_dependency(value) {
+                continue;
+            }
+            deps.push(normalize_python_name(name));
+        }
+    }
+
+    if let Some(arr) = doc
+        .get("project")
+        .and_then(|v| v.get("dependencies"))
+        .and_then(|v| v.as_array())
+    {
+        for dep in arr {
+            if let Some(dep_str) = dep.as_str()
+                && let Some(name) = parse_requirement_name(dep_str)
+            {
+                deps.push(normalize_python_name(&name));
+            }
+        }
+    }
+
+    Ok(deps)
+}
+
+fn is_poetry_path_dependency(value: &toml::Value) -> bool {
+    match value {
+        toml::Value::Table(table) => table.contains_key("path"),
+        _ => false,
     }
 }
 
@@ -273,15 +414,7 @@ fn parse_requirement_line(line: &str) -> Option<(String, String)> {
     let line = line.split(';').next()?.trim();
 
     // Remove extras (e.g., requests[security] -> requests)
-    let line = if let Some(bracket_idx) = line.find('[') {
-        if let Some(close_idx) = line.find(']') {
-            format!("{}{}", &line[..bracket_idx], &line[close_idx + 1..])
-        } else {
-            line.to_string()
-        }
-    } else {
-        line.to_string()
-    };
+    let line = strip_extras(line);
 
     // Find version specifier
     // Priority: == (exact), then try to extract from other specifiers
@@ -311,6 +444,19 @@ fn parse_requirement_line(line: &str) -> Option<(String, String)> {
     }
 
     None
+}
+
+/// Strip extras from a dependency name (e.g., "pkg[extra]" -> "pkg")
+fn strip_extras(name: &str) -> String {
+    if let Some(bracket_idx) = name.find('[') {
+        if let Some(close_idx) = name.find(']') {
+            format!("{}{}", &name[..bracket_idx], &name[close_idx + 1..])
+        } else {
+            name.to_string()
+        }
+    } else {
+        name.to_string()
+    }
 }
 
 // === pyproject.toml Parsing ===
@@ -460,6 +606,20 @@ fn normalize_python_name(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn write_temp_file(filename: &str, content: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("dotdeps_py_test_{}", nanos));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(filename);
+        fs::write(&path, content).unwrap();
+        path
+    }
 
     #[test]
     fn test_normalize_python_name() {
@@ -515,6 +675,43 @@ mod tests {
         // Lines without == don't return a version (we only want exact pins)
         assert_eq!(parse_requirement_line("requests>=2.31.0"), None);
         assert_eq!(parse_requirement_line("requests"), None);
+    }
+
+    #[test]
+    fn test_parse_requirement_name() {
+        assert_eq!(
+            parse_requirement_name("requests>=2.31.0"),
+            Some("requests".to_string())
+        );
+        assert_eq!(
+            parse_requirement_name("requests[security]==2.31.0"),
+            Some("requests".to_string())
+        );
+        assert_eq!(parse_requirement_name("-r other.txt"), None);
+        assert_eq!(
+            parse_requirement_name("somepkg @ https://example.com/pkg.whl"),
+            Some("somepkg".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_pyproject_dependencies() {
+        let content = r#"
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+local = { path = "../local" }
+
+[project]
+dependencies = ["flask>=2.0", "SQLAlchemy==2.0.0"]
+"#;
+        let path = write_temp_file("pyproject.toml", content);
+        let deps = parse_pyproject_dependencies(&path).unwrap();
+        assert!(deps.contains(&"requests".to_string()));
+        assert!(deps.contains(&"flask".to_string()));
+        assert!(deps.contains(&"sqlalchemy".to_string()));
+        assert!(!deps.contains(&"python".to_string()));
+        assert!(!deps.contains(&"local".to_string()));
     }
 
     #[test]

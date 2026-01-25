@@ -13,6 +13,7 @@
 //! - Local path dependencies: `link:`, `file:` URLs
 
 use crate::cli::VersionInfo;
+use crate::lockfile::find_nearest_file;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
@@ -49,62 +50,72 @@ pub enum LockfileError {
 /// - `Git { url, commit }` for git dependencies
 /// - `LocalPath { path }` for local link/file dependencies
 pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
-    let lockfile = find_lockfile()?;
+    let lockfile = find_lockfile_path()?;
     parse_version_from_lockfile(&lockfile, package)
 }
 
-/// Lockfile types in priority order
-#[derive(Debug, Clone, Copy)]
-enum LockfileType {
-    Pnpm,
-    Yarn,
-    Npm,
-    Bun,
-}
-
-impl LockfileType {
-    fn filename(&self) -> &'static str {
-        match self {
-            LockfileType::Pnpm => "pnpm-lock.yaml",
-            LockfileType::Yarn => "yarn.lock",
-            LockfileType::Npm => "package-lock.json",
-            LockfileType::Bun => "bun.lock",
-        }
-    }
-
-    fn priority_order() -> &'static [LockfileType] {
-        &[
-            LockfileType::Pnpm,
-            LockfileType::Yarn,
-            LockfileType::Npm,
-            LockfileType::Bun,
-        ]
-    }
-}
-
 /// Find the nearest lockfile by walking up from current directory
-fn find_lockfile() -> Result<PathBuf, LockfileError> {
-    let cwd = std::env::current_dir().map_err(|_| LockfileError::NotFound)?;
+pub fn find_lockfile_path() -> Result<PathBuf, LockfileError> {
+    find_nearest_file(&LOCKFILE_PRIORITY).ok_or(LockfileError::NotFound)
+}
 
-    let mut dir = cwd.as_path();
-    loop {
-        // Check for each lockfile type in priority order
-        for lockfile_type in LockfileType::priority_order() {
-            let path = dir.join(lockfile_type.filename());
-            if path.exists() {
-                return Ok(path);
+/// List direct dependencies from a lockfile or manifest.
+///
+/// - pnpm-lock.yaml: uses importers (root "." if present)
+/// - package-lock.json: uses root packages[""] or dependencies (v1)
+/// - yarn.lock/bun.lock: uses sibling package.json, falls back to lockfile entries
+pub fn list_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let mut deps = Vec::new();
+
+    match filename {
+        "pnpm-lock.yaml" => {
+            deps = list_pnpm_direct_dependencies(path)?;
+        }
+        "package-lock.json" => {
+            deps = list_package_lock_direct_dependencies(path)?;
+        }
+        "yarn.lock" => {
+            if let Some(parent) = path.parent() {
+                let package_json = parent.join("package.json");
+                if package_json.exists() {
+                    deps = list_package_json_dependencies(&package_json)?;
+                } else {
+                    deps = list_all_packages_from_yarn_lock(path)?;
+                }
             }
         }
-
-        // Move to parent directory
-        match dir.parent() {
-            Some(parent) => dir = parent,
-            None => break,
+        "bun.lock" => {
+            if let Some(parent) = path.parent() {
+                let package_json = parent.join("package.json");
+                if package_json.exists() {
+                    deps = list_package_json_dependencies(&package_json)?;
+                } else {
+                    deps = list_all_packages_from_bun_lock(path)?;
+                }
+            }
+        }
+        _ => {
+            return Err(LockfileError::Parse {
+                path: path.to_path_buf(),
+                details: format!("Unknown lockfile type: {}", filename),
+            });
         }
     }
 
-    Err(LockfileError::NotFound)
+    let mut unique: Vec<String> = deps.into_iter().map(|d| normalize_node_name(&d)).collect();
+    unique.sort();
+    unique.dedup();
+    Ok(unique)
 }
+
+/// Lockfile priority order
+const LOCKFILE_PRIORITY: [&str; 4] = [
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "package-lock.json",
+    "bun.lock",
+];
 
 /// Parse version from a lockfile
 fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
@@ -122,6 +133,197 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
     }
 }
 
+// === Direct dependency listing ===
+
+fn list_pnpm_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let lockfile: PnpmLockfile =
+        serde_yml::from_str(&content).map_err(|e| LockfileError::Parse {
+            path: path.to_path_buf(),
+            details: e.to_string(),
+        })?;
+
+    let mut deps = Vec::new();
+    let importers = lockfile.importers.unwrap_or_default();
+    if let Some(root) = importers.get(".") {
+        collect_importer_deps(root, &mut deps);
+    } else {
+        for importer in importers.values() {
+            collect_importer_deps(importer, &mut deps);
+        }
+    }
+
+    Ok(deps)
+}
+
+fn collect_importer_deps(importer: &PnpmImporter, deps: &mut Vec<String>) {
+    if let Some(map) = &importer.dependencies {
+        collect_dep_keys(map, deps);
+    }
+    if let Some(map) = &importer.dev_dependencies {
+        collect_dep_keys(map, deps);
+    }
+    if let Some(map) = &importer.optional_dependencies {
+        collect_dep_keys(map, deps);
+    }
+    if let Some(map) = &importer.peer_dependencies {
+        collect_dep_keys(map, deps);
+    }
+}
+
+fn list_package_lock_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let lockfile: PackageLockfile =
+        serde_json::from_str(&content).map_err(|e| LockfileError::Parse {
+            path: path.to_path_buf(),
+            details: e.to_string(),
+        })?;
+
+    let mut deps = Vec::new();
+
+    if let Some(packages) = &lockfile.packages
+        && let Some(root) = packages.get("")
+    {
+        if let Some(map) = &root.dependencies {
+            collect_dep_keys(map, &mut deps);
+        }
+        if let Some(map) = &root.dev_dependencies {
+            collect_dep_keys(map, &mut deps);
+        }
+        if let Some(map) = &root.optional_dependencies {
+            collect_dep_keys(map, &mut deps);
+        }
+        if let Some(map) = &root.peer_dependencies {
+            collect_dep_keys(map, &mut deps);
+        }
+        return Ok(deps);
+    }
+
+    if let Some(deps_map) = &lockfile.dependencies {
+        for (name, dep) in deps_map {
+            if is_local_version_string(&dep.version) {
+                continue;
+            }
+            deps.push(name.to_string());
+        }
+    }
+
+    Ok(deps)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PackageJson {
+    dependencies: Option<HashMap<String, serde_json::Value>>,
+    dev_dependencies: Option<HashMap<String, serde_json::Value>>,
+    optional_dependencies: Option<HashMap<String, serde_json::Value>>,
+    peer_dependencies: Option<HashMap<String, serde_json::Value>>,
+}
+
+fn list_package_json_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let manifest: PackageJson =
+        serde_json::from_str(&content).map_err(|e| LockfileError::Parse {
+            path: path.to_path_buf(),
+            details: e.to_string(),
+        })?;
+
+    let mut deps = Vec::new();
+    if let Some(map) = &manifest.dependencies {
+        collect_dep_keys(map, &mut deps);
+    }
+    if let Some(map) = &manifest.dev_dependencies {
+        collect_dep_keys(map, &mut deps);
+    }
+    if let Some(map) = &manifest.optional_dependencies {
+        collect_dep_keys(map, &mut deps);
+    }
+    if let Some(map) = &manifest.peer_dependencies {
+        collect_dep_keys(map, &mut deps);
+    }
+
+    Ok(deps)
+}
+
+fn list_all_packages_from_yarn_lock(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let mut deps = Vec::new();
+    for line in content.lines() {
+        let line = line.trim_end();
+        if !line.starts_with(' ') && !line.starts_with('#') && line.ends_with(':') {
+            let packages = parse_yarn_lock_header(line);
+            for pkg_spec in packages {
+                if let Some(name) = extract_package_name_from_yarn_spec(&pkg_spec) {
+                    deps.push(name);
+                }
+            }
+        }
+    }
+
+    Ok(deps)
+}
+
+fn list_all_packages_from_bun_lock(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let clean_content = strip_jsonc_trailing_commas(&content);
+    let lockfile: BunLockfile =
+        serde_json::from_str(&clean_content).map_err(|e| LockfileError::Parse {
+            path: path.to_path_buf(),
+            details: e.to_string(),
+        })?;
+
+    let mut deps = Vec::new();
+    let packages = lockfile.packages.unwrap_or_default();
+    for key in packages.keys() {
+        if key.contains('/') && !key.starts_with('@') {
+            continue;
+        }
+        deps.push(key.to_string());
+    }
+
+    Ok(deps)
+}
+
+fn collect_dep_keys(map: &HashMap<String, serde_json::Value>, deps: &mut Vec<String>) {
+    for (name, value) in map {
+        if is_local_node_spec(value) {
+            continue;
+        }
+        deps.push(name.to_string());
+    }
+}
+
+fn is_local_node_spec(value: &serde_json::Value) -> bool {
+    value.as_str().is_some_and(is_local_version_string)
+}
+
+fn is_local_version_string(version: &str) -> bool {
+    version.starts_with("link:")
+        || version.starts_with("file:")
+        || version.starts_with("workspace:")
+        || version.starts_with("path:")
+}
+
 // === pnpm-lock.yaml Parsing ===
 
 /// Structure for pnpm-lock.yaml (lockfileVersion 9.0)
@@ -131,7 +333,17 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
 /// We use serde_json::Value for package values since we only need the keys.
 #[derive(Deserialize)]
 struct PnpmLockfile {
+    importers: Option<HashMap<String, PnpmImporter>>,
     packages: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PnpmImporter {
+    dependencies: Option<HashMap<String, serde_json::Value>>,
+    dev_dependencies: Option<HashMap<String, serde_json::Value>>,
+    optional_dependencies: Option<HashMap<String, serde_json::Value>>,
+    peer_dependencies: Option<HashMap<String, serde_json::Value>>,
 }
 
 /// Parse version from pnpm-lock.yaml
@@ -325,6 +537,13 @@ struct PackageLockEntry {
     version: Option<String>,
     /// Resolved URL - can be registry URL or git URL
     resolved: Option<String>,
+    dependencies: Option<HashMap<String, serde_json::Value>>,
+    #[serde(rename = "devDependencies")]
+    dev_dependencies: Option<HashMap<String, serde_json::Value>>,
+    #[serde(rename = "optionalDependencies")]
+    optional_dependencies: Option<HashMap<String, serde_json::Value>>,
+    #[serde(rename = "peerDependencies")]
+    peer_dependencies: Option<HashMap<String, serde_json::Value>>,
 }
 
 #[derive(Deserialize)]
@@ -660,6 +879,20 @@ fn extract_yarn_resolved(line: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn write_temp_file(filename: &str, content: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("dotdeps_node_test_{}", nanos));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(filename);
+        fs::write(&path, content).unwrap();
+        path
+    }
 
     #[test]
     fn test_normalize_node_name() {
@@ -914,6 +1147,35 @@ packages:
                 path: "file:../local-pkg".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn test_list_package_json_dependencies_skips_local() {
+        let content = r#"{
+  "dependencies": {
+    "react": "^18.0.0",
+    "local": "file:../local"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}"#;
+        let path = write_temp_file("package.json", content);
+        let deps = list_package_json_dependencies(&path).unwrap();
+        assert!(deps.contains(&"react".to_string()));
+        assert!(deps.contains(&"@types/node".to_string()));
+        assert!(!deps.contains(&"local".to_string()));
+    }
+
+    #[test]
+    fn test_list_all_packages_from_yarn_lock_headers() {
+        let content = r#"
+lodash@^4.17.0:
+  version "4.17.21"
+"#;
+        let path = write_temp_file("yarn.lock", content);
+        let deps = list_all_packages_from_yarn_lock(&path).unwrap();
+        assert!(deps.contains(&"lodash".to_string()));
     }
 
     // === bun.lock tests ===

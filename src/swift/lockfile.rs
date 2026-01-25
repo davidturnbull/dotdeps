@@ -32,6 +32,7 @@
 //! ```
 
 use crate::cli::VersionInfo;
+use crate::lockfile::find_nearest_file;
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -72,7 +73,7 @@ pub enum LockfileError {
 ///
 /// Searches upward from the current directory for Package.resolved
 pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
-    let lockfile = find_lockfile()?;
+    let lockfile = find_lockfile_path()?;
     parse_version_from_lockfile(&lockfile, package)
 }
 
@@ -81,7 +82,7 @@ pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
 /// Swift Package.resolved contains the repository URL directly in the lockfile,
 /// unlike other ecosystems that require registry API calls.
 pub fn detect_repo_url(package: &str) -> Result<String, LockfileError> {
-    let lockfile = find_lockfile()?;
+    let lockfile = find_lockfile_path()?;
     parse_repo_url_from_lockfile(&lockfile, package)
 }
 
@@ -91,18 +92,14 @@ pub fn detect_repo_url(package: &str) -> Result<String, LockfileError> {
 /// - Package.resolved (Swift Package)
 /// - *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved (Xcode)
 /// - *.xcworkspace/xcshareddata/swiftpm/Package.resolved (Xcode workspace)
-fn find_lockfile() -> Result<PathBuf, LockfileError> {
-    let cwd = std::env::current_dir().map_err(|_| LockfileError::NotFound)?;
+pub fn find_lockfile_path() -> Result<PathBuf, LockfileError> {
+    if let Some(path) = find_nearest_file(&["Package.resolved"]) {
+        return Ok(path);
+    }
 
+    let cwd = std::env::current_dir().map_err(|_| LockfileError::NotFound)?;
     let mut dir = cwd.as_path();
     loop {
-        // Check for direct Package.resolved (Swift Package)
-        let direct_path = dir.join("Package.resolved");
-        if direct_path.exists() {
-            return Ok(direct_path);
-        }
-
-        // Check for Xcode project Package.resolved
         if let Some(xcode_path) = find_xcode_package_resolved(dir) {
             return Ok(xcode_path);
         }
@@ -114,6 +111,59 @@ fn find_lockfile() -> Result<PathBuf, LockfileError> {
     }
 
     Err(LockfileError::NotFound)
+}
+
+/// List direct dependencies from Package.resolved
+pub fn list_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    let version_check: VersionCheck =
+        serde_json::from_str(&content).map_err(|source| LockfileError::ParseFile {
+            path: path.to_path_buf(),
+            source,
+        })?;
+
+    let mut deps = Vec::new();
+
+    match version_check.version {
+        1 => {
+            let resolved: PackageResolvedV1 =
+                serde_json::from_str(&content).map_err(|source| LockfileError::ParseFile {
+                    path: path.to_path_buf(),
+                    source,
+                })?;
+
+            for pin in resolved.object.pins {
+                deps.push(pin.package);
+            }
+        }
+        2 => {
+            let resolved: PackageResolvedV2 =
+                serde_json::from_str(&content).map_err(|source| LockfileError::ParseFile {
+                    path: path.to_path_buf(),
+                    source,
+                })?;
+
+            for pin in resolved.pins {
+                if pin.kind != "remoteSourceControl" {
+                    continue;
+                }
+                deps.push(pin.identity);
+            }
+        }
+        v => return Err(LockfileError::UnsupportedVersion { version: v }),
+    }
+
+    let mut unique = deps
+        .into_iter()
+        .map(|d| normalize_package_name(&d))
+        .collect::<Vec<_>>();
+    unique.sort();
+    unique.dedup();
+    Ok(unique)
 }
 
 /// Find Package.resolved inside Xcode project or workspace
@@ -357,6 +407,20 @@ fn normalize_repo_url(url: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn write_temp_file(filename: &str, content: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("dotdeps_swift_test_{}", nanos));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(filename);
+        fs::write(&path, content).unwrap();
+        path
+    }
 
     #[test]
     fn test_normalize_package_name() {
@@ -498,5 +562,35 @@ mod tests {
 
         assert_eq!(v1.version, 1);
         assert_eq!(v2.version, 2);
+    }
+
+    #[test]
+    fn test_list_direct_dependencies_v2() {
+        let content = r#"{
+  "pins": [
+    {
+      "identity": "swift-argument-parser",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-argument-parser",
+      "state": {
+        "revision": "abc",
+        "version": "1.5.0"
+      }
+    },
+    {
+      "identity": "local-pkg",
+      "kind": "localSourceControl",
+      "location": "../local",
+      "state": {
+        "revision": "def"
+      }
+    }
+  ],
+  "version": 2
+}"#;
+        let path = write_temp_file("Package.resolved", content);
+        let deps = list_direct_dependencies(&path).unwrap();
+        assert!(deps.contains(&"swift-argument-parser".to_string()));
+        assert!(!deps.contains(&"local-pkg".to_string()));
     }
 }

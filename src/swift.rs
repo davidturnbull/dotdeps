@@ -6,4 +6,6 @@
 
 mod lockfile;
 
-pub use lockfile::{detect_repo_url, find_version};
+pub use lockfile::{
+    LockfileError, detect_repo_url, find_lockfile_path, find_version, list_direct_dependencies,
+};

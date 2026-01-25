@@ -37,6 +37,8 @@ pub enum Command {
     },
     /// List all dependencies in .deps/
     List,
+    /// Output LLM-ready dependency context
+    Context,
 }
 
 /// Supported package ecosystems

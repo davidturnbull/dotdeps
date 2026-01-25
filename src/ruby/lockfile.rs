@@ -17,6 +17,7 @@
 //! This implementation currently only parses GEM sections.
 
 use crate::cli::VersionInfo;
+use crate::lockfile::find_nearest_file;
 use std::fs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -42,28 +43,35 @@ pub enum LockfileError {
 ///
 /// Searches upward from the current directory for Gemfile.lock
 pub fn find_version(package: &str) -> Result<VersionInfo, LockfileError> {
-    let lockfile = find_lockfile()?;
+    let lockfile = find_lockfile_path()?;
     parse_version_from_lockfile(&lockfile, package)
 }
 
 /// Find the nearest Gemfile.lock by walking up from current directory
-fn find_lockfile() -> Result<PathBuf, LockfileError> {
-    let cwd = std::env::current_dir().map_err(|_| LockfileError::NotFound)?;
+pub fn find_lockfile_path() -> Result<PathBuf, LockfileError> {
+    find_nearest_file(&["Gemfile.lock"]).ok_or(LockfileError::NotFound)
+}
 
-    let mut dir = cwd.as_path();
-    loop {
-        let path = dir.join("Gemfile.lock");
-        if path.exists() {
-            return Ok(path);
-        }
+/// List direct dependencies from Gemfile.lock
+///
+/// Parses the DEPENDENCIES section and excludes gems listed under PATH sections.
+pub fn list_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
 
-        match dir.parent() {
-            Some(parent) => dir = parent,
-            None => break,
-        }
-    }
+    let path_gems = parse_path_section_gems(&content);
+    let mut deps = parse_dependency_section_gems(&content);
+    deps.retain(|name| !path_gems.contains(name));
 
-    Err(LockfileError::NotFound)
+    let mut unique = deps
+        .into_iter()
+        .map(|d| normalize_gem_name(&d))
+        .collect::<Vec<_>>();
+    unique.sort();
+    unique.dedup();
+    Ok(unique)
 }
 
 /// Parse version from Gemfile.lock
@@ -116,6 +124,75 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
     Err(LockfileError::VersionNotFound {
         package: package.to_string(),
     })
+}
+
+fn parse_dependency_section_gems(content: &str) -> Vec<String> {
+    let mut deps = Vec::new();
+    let mut in_deps = false;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        if trimmed == "DEPENDENCIES" {
+            in_deps = true;
+            continue;
+        }
+
+        if in_deps {
+            if !line.starts_with(' ') && !trimmed.is_empty() {
+                break;
+            }
+            if trimmed.is_empty() {
+                continue;
+            }
+            let name = trimmed
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_end_matches('!');
+            if !name.is_empty() {
+                deps.push(name.to_string());
+            }
+        }
+    }
+
+    deps
+}
+
+fn parse_path_section_gems(content: &str) -> Vec<String> {
+    let mut deps = Vec::new();
+    let mut in_path = false;
+    let mut in_specs = false;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        if trimmed == "PATH" {
+            in_path = true;
+            in_specs = false;
+            continue;
+        }
+
+        if in_path && trimmed == "specs:" {
+            in_specs = true;
+            continue;
+        }
+
+        if in_path && !line.starts_with(' ') && !trimmed.is_empty() {
+            in_path = false;
+            in_specs = false;
+            continue;
+        }
+
+        if in_path
+            && in_specs
+            && let Some(gem_info) = parse_gem_line(line)
+        {
+            deps.push(gem_info.name);
+        }
+    }
+
+    deps
 }
 
 struct GemInfo {
@@ -344,5 +421,39 @@ PLATFORMS
         assert!(found_gems.contains(&("private-gem".to_string(), "1.0.0".to_string())));
         assert!(found_gems.contains(&("rails".to_string(), "7.1.0".to_string())));
         assert!(found_gems.contains(&("rack".to_string(), "2.2.8".to_string())));
+    }
+
+    #[test]
+    fn test_parse_dependency_section_gems() {
+        let content = r#"GEM
+  specs:
+    rails (7.1.0)
+
+DEPENDENCIES
+  rails (= 7.1.0)
+  localgem!
+
+PLATFORMS
+  ruby
+"#;
+        let deps = parse_dependency_section_gems(content);
+        assert!(deps.contains(&"rails".to_string()));
+        assert!(deps.contains(&"localgem".to_string()));
+    }
+
+    #[test]
+    fn test_parse_path_section_gems() {
+        let content = r#"PATH
+  remote: ../local
+  specs:
+    localgem (0.1.0)
+
+GEM
+  specs:
+    rails (7.1.0)
+"#;
+        let deps = parse_path_section_gems(content);
+        assert!(deps.contains(&"localgem".to_string()));
+        assert!(!deps.contains(&"rails".to_string()));
     }
 }

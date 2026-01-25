@@ -1,9 +1,11 @@
 mod cache;
 mod cli;
 mod config;
+mod context;
 mod deps;
 mod git;
 mod go;
+mod lockfile;
 mod node;
 mod output;
 mod python;
@@ -37,6 +39,7 @@ fn main() {
         Some(Command::Add { spec }) => run_add(spec, json_output, dry_run),
         Some(Command::Remove { spec }) => run_remove(spec, json_output, dry_run),
         Some(Command::List) => run_list(json_output),
+        Some(Command::Context) => run_context(),
         None => {
             eprintln!("No command specified. Use --help for usage information.");
             std::process::exit(1);
@@ -467,6 +470,13 @@ fn run_clean(json_output: bool, dry_run: bool) -> Result<(), Box<dyn std::error:
         println!("{}Would remove .deps/", prefix);
     } else {
         println!("Removed .deps/");
+    }
+    Ok(())
+}
+
+fn run_context() -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(output) = context::render_context()? {
+        print!("{}", output);
     }
     Ok(())
 }

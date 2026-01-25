@@ -527,3 +527,36 @@
 
 ### Next
 - Implement bun.lock support (task-015), --json flag (task-017), or --dry-run flag (task-018)
+
+## Iteration 14 - task-015: Support bun.lock files for Node.js ecosystem
+
+### Completed
+- Added Bun variant to LockfileType enum
+- Added bun.lock to lockfile priority order (after package-lock.json)
+- Implemented parse_bun_lock() function for JSONC format parsing
+- Added strip_jsonc_trailing_commas() to handle JSONC trailing commas
+- Implemented extract_version_from_bun_entry() for "name@version" parsing
+- Handles both regular packages ("lodash") and scoped packages ("@types/node")
+- Skips nested packages ("send/ms") to avoid incorrect version matching
+- Added 8 new unit tests for bun.lock parsing
+- 130 total unit tests pass
+
+### Key decisions
+- bun.lock is JSONC (JSON with trailing commas), not strict JSON
+- Used custom strip_jsonc_trailing_commas() instead of adding a JSONC crate
+- Package entries are arrays: ["name@version", "registry", {deps}, "integrity"]
+- Nested packages like "send/ms" are ignored when looking up "ms"
+- Priority order maintained: pnpm-lock.yaml > yarn.lock > package-lock.json > bun.lock
+
+### Files changed
+- src/node/lockfile.rs (added bun.lock support, 8 new tests)
+- .ralph/prd.json (task-015 passes: true)
+
+### Verified behavior
+- `dotdeps add node:lodash` reads version from bun.lock (4.17.23)
+- `dotdeps add node:@types/node` handles scoped packages correctly
+- `dotdeps list` shows correct versions
+- package-lock.json has higher priority than bun.lock when both exist
+
+### Next
+- Implement --json flag (task-017) or --dry-run flag (task-018)

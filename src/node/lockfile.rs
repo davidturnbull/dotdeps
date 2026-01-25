@@ -4,8 +4,9 @@
 //! - pnpm-lock.yaml (YAML)
 //! - yarn.lock (custom format, not YAML)
 //! - package-lock.json (JSON)
+//! - bun.lock (JSONC format)
 //!
-//! Lockfile priority order: pnpm-lock.yaml > yarn.lock > package-lock.json
+//! Lockfile priority order: pnpm-lock.yaml > yarn.lock > package-lock.json > bun.lock
 //!
 //! Also detects special dependency types:
 //! - Git dependencies: URLs starting with `git+`, `git://`, or containing `#commit`
@@ -58,6 +59,7 @@ enum LockfileType {
     Pnpm,
     Yarn,
     Npm,
+    Bun,
 }
 
 impl LockfileType {
@@ -66,11 +68,17 @@ impl LockfileType {
             LockfileType::Pnpm => "pnpm-lock.yaml",
             LockfileType::Yarn => "yarn.lock",
             LockfileType::Npm => "package-lock.json",
+            LockfileType::Bun => "bun.lock",
         }
     }
 
     fn priority_order() -> &'static [LockfileType] {
-        &[LockfileType::Pnpm, LockfileType::Yarn, LockfileType::Npm]
+        &[
+            LockfileType::Pnpm,
+            LockfileType::Yarn,
+            LockfileType::Npm,
+            LockfileType::Bun,
+        ]
     }
 }
 
@@ -106,6 +114,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
         "pnpm-lock.yaml" => parse_pnpm_lock(path, package),
         "yarn.lock" => parse_yarn_lock(path, package),
         "package-lock.json" => parse_package_lock(path, package),
+        "bun.lock" => parse_bun_lock(path, package),
         _ => Err(LockfileError::Parse {
             path: path.to_path_buf(),
             details: format!("Unknown lockfile type: {}", filename),
@@ -383,6 +392,177 @@ fn parse_package_lock(path: &Path, package: &str) -> Result<VersionInfo, Lockfil
     Err(LockfileError::VersionNotFound {
         package: package.to_string(),
     })
+}
+
+// === bun.lock Parsing ===
+
+/// Structure for bun.lock (JSONC format, lockfileVersion 1)
+///
+/// bun.lock is a JSONC file (JSON with trailing commas). Each package entry
+/// in the `packages` object is an array: ["name@version", "registry", {deps}, "integrity"]
+/// Keys can be package names ("lodash", "@types/node") or nested paths ("send/ms").
+#[derive(Deserialize)]
+struct BunLockfile {
+    packages: Option<HashMap<String, serde_json::Value>>,
+}
+
+/// Parse version from bun.lock
+///
+/// bun.lock format:
+/// ```json
+/// {
+///   "packages": {
+///     "lodash": ["lodash@4.17.21", "", {}, "sha512-..."],
+///     "@types/node": ["@types/node@22.0.0", "", {...}, "sha512-..."]
+///   }
+/// }
+/// ```
+fn parse_bun_lock(path: &Path, package: &str) -> Result<VersionInfo, LockfileError> {
+    let content = fs::read_to_string(path).map_err(|source| LockfileError::ReadFile {
+        path: path.to_path_buf(),
+        source,
+    })?;
+
+    // bun.lock is JSONC (JSON with trailing commas), but serde_json handles it in lenient mode
+    // We need to strip trailing commas for strict JSON parsing
+    let clean_content = strip_jsonc_trailing_commas(&content);
+
+    let lockfile: BunLockfile =
+        serde_json::from_str(&clean_content).map_err(|e| LockfileError::Parse {
+            path: path.to_path_buf(),
+            details: e.to_string(),
+        })?;
+
+    let packages = lockfile.packages.unwrap_or_default();
+    let normalized_package = normalize_node_name(package);
+
+    // Look for direct package match (handles both regular and scoped packages)
+    for (key, value) in &packages {
+        // Skip nested packages like "send/ms" unless they match exactly
+        // A nested package key contains "/" but the first segment is not "@"
+        if key.contains('/') && !key.starts_with('@') {
+            continue;
+        }
+
+        if normalize_node_name(key) == normalized_package {
+            return parse_bun_package_entry(value, package, path);
+        }
+    }
+
+    Err(LockfileError::VersionNotFound {
+        package: package.to_string(),
+    })
+}
+
+/// Parse a bun.lock package entry array into VersionInfo
+///
+/// Entry format: ["name@version", "registry/tarball", {dependencies}, "integrity"]
+fn parse_bun_package_entry(
+    value: &serde_json::Value,
+    package: &str,
+    path: &Path,
+) -> Result<VersionInfo, LockfileError> {
+    let arr = value.as_array().ok_or_else(|| LockfileError::Parse {
+        path: path.to_path_buf(),
+        details: format!("Expected array for package {}", package),
+    })?;
+
+    // First element is "name@version"
+    let name_version =
+        arr.first()
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| LockfileError::Parse {
+                path: path.to_path_buf(),
+                details: format!("Missing name@version for package {}", package),
+            })?;
+
+    // Parse "name@version" to extract version
+    if let Some(version) = extract_version_from_bun_entry(name_version) {
+        // Check if this is a git URL or local path
+        return Ok(parse_node_version_string(&version));
+    }
+
+    Err(LockfileError::Parse {
+        path: path.to_path_buf(),
+        details: format!("Could not parse version from: {}", name_version),
+    })
+}
+
+/// Extract version from bun.lock entry like "lodash@4.17.21" or "@types/node@22.0.0"
+fn extract_version_from_bun_entry(entry: &str) -> Option<String> {
+    // Handle scoped packages (@scope/name@version)
+    if entry.starts_with('@') {
+        let after_scope = entry.find('/')? + 1;
+        let version_sep = entry[after_scope..].find('@')? + after_scope;
+        Some(entry[version_sep + 1..].to_string())
+    } else {
+        // Regular package (name@version)
+        let at_idx = entry.find('@')?;
+        Some(entry[at_idx + 1..].to_string())
+    }
+}
+
+/// Strip trailing commas from JSONC to make it valid JSON
+///
+/// bun.lock uses JSONC format which allows trailing commas. This function
+/// removes them so serde_json can parse the content.
+fn strip_jsonc_trailing_commas(content: &str) -> String {
+    let mut result = String::with_capacity(content.len());
+    let mut chars = content.chars().peekable();
+    let mut in_string = false;
+    let mut escape_next = false;
+
+    while let Some(c) = chars.next() {
+        if escape_next {
+            result.push(c);
+            escape_next = false;
+            continue;
+        }
+
+        if c == '\\' && in_string {
+            result.push(c);
+            escape_next = true;
+            continue;
+        }
+
+        if c == '"' {
+            in_string = !in_string;
+            result.push(c);
+            continue;
+        }
+
+        if in_string {
+            result.push(c);
+            continue;
+        }
+
+        // Outside string: check for trailing comma
+        if c == ',' {
+            // Look ahead for ] or } (skipping whitespace)
+            let mut peek_chars = chars.clone();
+            loop {
+                match peek_chars.peek() {
+                    Some(']') | Some('}') => {
+                        // This is a trailing comma, skip it
+                        break;
+                    }
+                    Some(c) if c.is_whitespace() => {
+                        peek_chars.next();
+                        continue;
+                    }
+                    _ => {
+                        // Not a trailing comma, keep it
+                        result.push(',');
+                        break;
+                    }
+                }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+
+    result
 }
 
 /// Normalize Node.js package name for comparison
@@ -734,5 +914,101 @@ packages:
                 path: "file:../local-pkg".to_string(),
             }
         );
+    }
+
+    // === bun.lock tests ===
+
+    #[test]
+    fn test_strip_jsonc_trailing_commas() {
+        let input = r#"{"a": 1, "b": 2,}"#;
+        let expected = r#"{"a": 1, "b": 2}"#;
+        assert_eq!(strip_jsonc_trailing_commas(input), expected);
+    }
+
+    #[test]
+    fn test_strip_jsonc_trailing_commas_array() {
+        let input = r#"[1, 2, 3,]"#;
+        let expected = r#"[1, 2, 3]"#;
+        assert_eq!(strip_jsonc_trailing_commas(input), expected);
+    }
+
+    #[test]
+    fn test_strip_jsonc_trailing_commas_nested() {
+        let input = r#"{"a": {"b": 1,}, "c": [1, 2,],}"#;
+        let expected = r#"{"a": {"b": 1}, "c": [1, 2]}"#;
+        assert_eq!(strip_jsonc_trailing_commas(input), expected);
+    }
+
+    #[test]
+    fn test_strip_jsonc_preserves_commas_in_strings() {
+        let input = r#"{"a": "hello, world,",}"#;
+        let expected = r#"{"a": "hello, world,"}"#;
+        assert_eq!(strip_jsonc_trailing_commas(input), expected);
+    }
+
+    #[test]
+    fn test_extract_version_from_bun_entry_regular() {
+        assert_eq!(
+            extract_version_from_bun_entry("lodash@4.17.21"),
+            Some("4.17.21".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_bun_entry_scoped() {
+        assert_eq!(
+            extract_version_from_bun_entry("@types/node@22.19.7"),
+            Some("22.19.7".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_bun_lock_content() {
+        let content = r#"{
+  "lockfileVersion": 1,
+  "packages": {
+    "lodash": ["lodash@4.17.21", "", {}, "sha512-..."],
+    "@types/node": ["@types/node@22.19.7", "", {}, "sha512-..."],
+  }
+}"#;
+
+        let clean_content = strip_jsonc_trailing_commas(content);
+        let lockfile: BunLockfile = serde_json::from_str(&clean_content).unwrap();
+        let packages = lockfile.packages.unwrap();
+
+        // Check keys exist
+        assert!(packages.contains_key("lodash"));
+        assert!(packages.contains_key("@types/node"));
+
+        // Check array structure
+        let lodash = packages.get("lodash").unwrap().as_array().unwrap();
+        assert_eq!(lodash[0].as_str().unwrap(), "lodash@4.17.21");
+
+        let types_node = packages.get("@types/node").unwrap().as_array().unwrap();
+        assert_eq!(types_node[0].as_str().unwrap(), "@types/node@22.19.7");
+    }
+
+    #[test]
+    fn test_parse_bun_lock_skips_nested_packages() {
+        // Nested packages like "send/ms" should be skipped when looking for "ms"
+        let content = r#"{
+  "lockfileVersion": 1,
+  "packages": {
+    "ms": ["ms@2.1.3", "", {}, "sha512-..."],
+    "send/ms": ["ms@2.0.0", "", {}, "sha512-..."],
+  }
+}"#;
+
+        let clean_content = strip_jsonc_trailing_commas(content);
+        let lockfile: BunLockfile = serde_json::from_str(&clean_content).unwrap();
+        let packages = lockfile.packages.unwrap();
+
+        // Both should exist in the parsed structure
+        assert!(packages.contains_key("ms"));
+        assert!(packages.contains_key("send/ms"));
+
+        // But when parsing, we should find the root "ms", not "send/ms"
+        let ms = packages.get("ms").unwrap().as_array().unwrap();
+        assert_eq!(ms[0].as_str().unwrap(), "ms@2.1.3");
     }
 }

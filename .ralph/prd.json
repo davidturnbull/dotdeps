@@ -181,7 +181,7 @@
         "Add bun.lock to lockfile priority after package-lock.json",
         "Verify version detection from bun.lock works"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-016",

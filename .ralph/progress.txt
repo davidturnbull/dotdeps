@@ -356,3 +356,40 @@
 
 ### Next
 - Implement cache eviction (LRU by atime)
+
+## Iteration 10 - task-011: Cache eviction (LRU by atime)
+
+### Completed
+- Implemented cache eviction using LRU (least recently used) strategy
+- CacheEntry struct tracks path, size (bytes), and access time for each cached package
+- list_entries() recursively collects all version directories with .git folders
+- get_dir_stats() calculates directory size and uses .git folder atime
+- evict_to_limit() sorts by atime (oldest first), deletes until under limit
+- cleanup_empty_parents() removes empty ecosystem/package directories after eviction
+- Eviction runs automatically after each successful clone in add command
+- Message printed when eviction occurs showing count and limit
+- 97 unit tests pass
+
+### Key decisions
+- Access time from .git directory (more reliable than tracking all files)
+- Eviction happens after clone, not before (simpler, allows single large packages)
+- Empty parent directories cleaned up after eviction
+- Cache limit of 0 means unlimited (no eviction)
+- total_size() function provided for debugging/future use
+
+### Files changed
+- src/cache.rs (added CacheEntry, list_entries, evict_to_limit, get_dir_stats, etc.)
+- src/config.rs (removed #[allow(dead_code)] from cache_limit_gb and cache_limit_bytes)
+- src/main.rs (added run_cache_eviction, called after successful clone)
+- README.md (updated status, marked cache eviction complete)
+- .ralph/prd.json (task-011 passes: true)
+
+### Verified behavior
+- `dotdeps add python:pydantic@2.5.0` with 0.001GB limit triggers eviction
+- Message shows "Cache eviction: removed 29 old entries to stay under 0.001GB limit"
+- Empty cache directories cleaned up after eviction
+- Normal usage with 5GB limit doesn't trigger eviction
+- Eviction only runs after fresh clones (cache hits don't trigger)
+
+### Next
+- All core features implemented. Remaining tasks are polish/edge cases.

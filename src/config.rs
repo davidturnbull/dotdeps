@@ -53,8 +53,6 @@ pub struct PackageOverride {
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Config {
     /// Maximum cache size in GB (default: 5)
-    /// Note: Cache eviction not yet implemented
-    #[allow(dead_code)]
     #[serde(default = "default_cache_limit")]
     pub cache_limit_gb: f64,
 
@@ -86,8 +84,6 @@ impl Config {
     }
 
     /// Get the cache limit in bytes
-    /// Note: Cache eviction not yet implemented
-    #[allow(dead_code)]
     pub fn cache_limit_bytes(&self) -> u64 {
         (self.cache_limit_gb * 1024.0 * 1024.0 * 1024.0) as u64
     }

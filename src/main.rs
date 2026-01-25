@@ -79,11 +79,35 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
         } else {
             println!("  cloned at {}", result.cloned_ref);
         }
+
+        // Run cache eviction if over limit
+        run_cache_eviction(&config)?;
     }
 
     // Create symlink in .deps/
     let link_path = deps::link(spec.ecosystem, &spec.package, &version)?;
     println!("Created {}", link_path.display());
+
+    Ok(())
+}
+
+/// Run cache eviction if cache exceeds configured limit
+fn run_cache_eviction(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+    let limit = config.cache_limit_bytes();
+    if limit == 0 {
+        // No limit configured (0 means unlimited)
+        return Ok(());
+    }
+
+    let evicted = cache::evict_to_limit(limit)?;
+
+    if !evicted.is_empty() {
+        eprintln!(
+            "Cache eviction: removed {} old entries to stay under {}GB limit",
+            evicted.len(),
+            config.cache_limit_gb
+        );
+    }
 
     Ok(())
 }

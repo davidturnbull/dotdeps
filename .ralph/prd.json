@@ -131,6 +131,58 @@
         "Verify override repo URL is used when detection fails"
       ],
       "passes": true
+    },
+    {
+      "id": "task-011",
+      "category": "functional",
+      "description": "Implement cache eviction (LRU by filesystem atime)",
+      "steps": [
+        "Calculate total cache size by summing all package directories",
+        "Get last access time (atime) for each cached package",
+        "When cache exceeds limit, delete least recently accessed packages first",
+        "Run eviction after successful clone in add command",
+        "Verify cache eviction deletes old packages when limit exceeded",
+        "Handle broken symlinks after eviction (already done via list command)"
+      ],
+      "passes": true
+    },
+    {
+      "id": "task-012",
+      "category": "functional",
+      "description": "Handle git dependencies in lockfiles (clone from git URL, use commit hash)",
+      "steps": [
+        "Detect git dependencies in Python lockfiles (git+https://...)",
+        "Detect git dependencies in Node lockfiles",
+        "Clone from git URL directly instead of registry lookup",
+        "Use commit hash as version in cache path",
+        "Checkout specific commit after clone",
+        "Verify git dependency cloning works end-to-end"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-013",
+      "category": "functional",
+      "description": "Skip local path dependencies silently",
+      "steps": [
+        "Detect local path dependencies in Python lockfiles (file:../local-pkg)",
+        "Detect local path dependencies in Node lockfiles (link:, file:)",
+        "Skip silently with info message when local dep detected",
+        "Verify local path deps don't cause errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-014",
+      "category": "polish",
+      "description": "Improve error messages and user experience",
+      "steps": [
+        "Add disk full detection with helpful error message",
+        "Add colored output for warnings and errors",
+        "Add progress indicator for slow network operations",
+        "Verify error messages match PRD failure modes table"
+      ],
+      "passes": false
     }
   ]
 }

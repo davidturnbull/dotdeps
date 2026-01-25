@@ -147,14 +147,14 @@ Optional config file at `~/.config/dotdeps/config.json`:
 
 ### Settings
 
-- `cache_limit_gb`: Maximum cache size in GB (default: 5). Cache eviction not yet implemented.
+- `cache_limit_gb`: Maximum cache size in GB (default: 5). Cache is evicted using LRU (least recently used) strategy based on filesystem access time.
 - `overrides`: Per-ecosystem, per-package repository URL overrides. Use when automatic detection fails.
 
 Override lookup is case-insensitive for package names.
 
 ## Status
 
-**Work in progress.** Python, Node.js, Rust, Go, and Ruby ecosystems are fully functional. Other features pending implementation.
+**Functional.** Python, Node.js, Rust, Go, and Ruby ecosystems are fully supported with lockfile parsing and registry-based repo detection. Config file with repo overrides and LRU cache eviction are implemented.
 
 - [x] CLI argument parsing
 - [x] Cache directory management
@@ -174,7 +174,7 @@ Override lookup is case-insensitive for package names.
 - [x] Ruby ecosystem: RubyGems repo URL detection
 - [x] Go ecosystem: go.sum lockfile parsing
 - [x] Config file support (repo overrides)
-- [ ] Cache eviction (LRU by atime)
+- [x] Cache eviction (LRU by atime)
 
 ## License
 

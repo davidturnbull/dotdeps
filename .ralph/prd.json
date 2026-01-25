@@ -130,7 +130,7 @@
         "Support overrides for custom repo URLs",
         "Verify override repo URL is used when detection fails"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

@@ -319,3 +319,40 @@
 
 ### Next
 - Implement config file support (task-010)
+
+## Iteration 9 - task-010: Config file support
+
+### Completed
+- Created config module for ~/.config/dotdeps/config.json parsing
+- Supports cache_limit_gb setting (default: 5GB)
+- Supports per-ecosystem, per-package repo URL overrides
+- Overrides checked first before ecosystem-specific detection
+- Case-insensitive override lookup for package names
+- Config file is optional (defaults used when not present)
+- Clear error messages for malformed config files
+- XDG_CONFIG_HOME environment variable respected
+- 97 unit tests pass (6 new config tests)
+
+### Key decisions
+- Followed XDG Base Directory Specification for config location
+- Overrides use nested structure: { "ecosystem": { "package": { "repo": "url" } } }
+- Package names in overrides should be lowercase (lookup is case-insensitive)
+- cache_limit_gb read but cache eviction not yet implemented (separate task)
+- No new dependencies needed (reuses existing serde, serde_json)
+
+### Files changed
+- src/config.rs (new - config file parsing)
+- src/main.rs (added config module, integrated overrides into detect_repo_url)
+- README.md (added Configuration section, updated status)
+- .ralph/prd.json (task-010 passes: true)
+
+### Verified behavior
+- `dotdeps add python:obscure-lib@4.17.21` uses override from config.json
+- Override lookup is case-insensitive (Obscure-Lib -> obscure-lib)
+- No config file present: defaults used, CLI works normally
+- Malformed config file: clear parse error with file path and line number
+- Non-overridden packages still use ecosystem-specific detection
+- `dotdeps list` shows packages added with overrides correctly
+
+### Next
+- Implement cache eviction (LRU by atime)

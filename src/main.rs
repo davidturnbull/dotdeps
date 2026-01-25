@@ -1,5 +1,6 @@
 mod cache;
 mod cli;
+mod config;
 mod deps;
 mod git;
 mod go;
@@ -44,6 +45,9 @@ fn main() {
 }
 
 fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
+    // Load configuration
+    let config = config::Config::load()?;
+
     // Verify cache is writable (fail fast)
     cache::ensure_writable()?;
 
@@ -59,8 +63,8 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     if cache::exists(spec.ecosystem, &spec.package, &version)? {
         println!("Using cached {} {}", spec.package, version);
     } else {
-        // Detect repository URL
-        let repo_url = detect_repo_url(spec.ecosystem, &spec.package)?;
+        // Detect repository URL (check config override first)
+        let repo_url = detect_repo_url(spec.ecosystem, &spec.package, &config)?;
 
         println!("Fetching {} {}...", spec.package, version);
 
@@ -99,10 +103,19 @@ fn lookup_version(
 }
 
 /// Detect the repository URL for a package
+///
+/// Checks config override first, then falls back to ecosystem-specific detection.
 fn detect_repo_url(
     ecosystem: cli::Ecosystem,
     package: &str,
+    config: &config::Config,
 ) -> Result<String, Box<dyn std::error::Error>> {
+    // Check for config override first
+    if let Some(repo_url) = config.repo_override(ecosystem, package) {
+        return Ok(repo_url.to_string());
+    }
+
+    // Fall back to ecosystem-specific detection
     match ecosystem {
         cli::Ecosystem::Python => python::detect_repo_url(package).map_err(|e| e.into()),
         cli::Ecosystem::Node => node::detect_repo_url(package).map_err(|e| e.into()),

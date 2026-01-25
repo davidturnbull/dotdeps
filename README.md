@@ -123,6 +123,35 @@ When no version is specified, dotdeps searches for `go.sum` walking up from the 
 
 Go module paths (e.g., `github.com/gin-gonic/gin`) are used directly as repository URLs. Module paths with major version suffixes (e.g., `/v2`, `/v3`) are handled correctly.
 
+## Configuration
+
+Optional config file at `~/.config/dotdeps/config.json`:
+
+```json
+{
+  "cache_limit_gb": 5,
+  "overrides": {
+    "python": {
+      "some-obscure-lib": {
+        "repo": "https://github.com/someone/some-obscure-lib"
+      }
+    },
+    "node": {
+      "@private/pkg": {
+        "repo": "https://github.com/org/private-pkg"
+      }
+    }
+  }
+}
+```
+
+### Settings
+
+- `cache_limit_gb`: Maximum cache size in GB (default: 5). Cache eviction not yet implemented.
+- `overrides`: Per-ecosystem, per-package repository URL overrides. Use when automatic detection fails.
+
+Override lookup is case-insensitive for package names.
+
 ## Status
 
 **Work in progress.** Python, Node.js, Rust, Go, and Ruby ecosystems are fully functional. Other features pending implementation.
@@ -144,7 +173,8 @@ Go module paths (e.g., `github.com/gin-gonic/gin`) are used directly as reposito
 - [x] Ruby ecosystem: Gemfile.lock parsing
 - [x] Ruby ecosystem: RubyGems repo URL detection
 - [x] Go ecosystem: go.sum lockfile parsing
-- [ ] Config file support (cache limits, repo overrides)
+- [x] Config file support (repo overrides)
+- [ ] Cache eviction (LRU by atime)
 
 ## License
 

@@ -207,7 +207,7 @@
         "Implement JSON output for remove command",
         "Verify JSON output is valid and parseable"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "task-018",

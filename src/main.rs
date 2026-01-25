@@ -5,6 +5,7 @@ mod deps;
 mod git;
 mod go;
 mod node;
+mod output;
 mod python;
 mod ruby;
 mod rust;
@@ -12,9 +13,11 @@ mod swift;
 
 use clap::Parser;
 use cli::{Cli, Command};
+use output::{AddResult, CleanResult, ListEntry, ListResult, RemoveResult, SkipResult};
 
 fn main() {
     let cli = Cli::parse();
+    let json_output = cli.json;
 
     // Handle --clean flag (mutually exclusive with subcommands)
     if cli.clean {
@@ -22,7 +25,7 @@ fn main() {
             eprintln!("Error: --clean cannot be used with a subcommand");
             std::process::exit(1);
         }
-        if let Err(e) = run_clean() {
+        if let Err(e) = run_clean(json_output) {
             eprintln!("Error: {}", e);
             std::process::exit(1);
         }
@@ -30,9 +33,9 @@ fn main() {
     }
 
     let result = match cli.command {
-        Some(Command::Add { spec }) => run_add(spec),
-        Some(Command::Remove { spec }) => run_remove(spec),
-        Some(Command::List) => run_list(),
+        Some(Command::Add { spec }) => run_add(spec, json_output),
+        Some(Command::Remove { spec }) => run_remove(spec, json_output),
+        Some(Command::List) => run_list(json_output),
         None => {
             eprintln!("No command specified. Use --help for usage information.");
             std::process::exit(1);
@@ -45,7 +48,7 @@ fn main() {
     }
 }
 
-fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
+fn run_add(spec: cli::DepSpec, json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     // Load configuration
     let config = config::Config::load()?;
 
@@ -61,20 +64,31 @@ fn run_add(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
     // Handle different version types
     match &version_info {
         cli::VersionInfo::LocalPath { path } => {
-            // Skip local path dependencies silently
-            println!(
-                "Skipping local dependency {} (path: {})",
-                spec.package, path
-            );
+            // Skip local path dependencies
+            if json_output {
+                output::print_json(&SkipResult::local_path(spec.ecosystem, &spec.package, path));
+            } else {
+                println!(
+                    "Skipping local dependency {} (path: {})",
+                    spec.package, path
+                );
+            }
             return Ok(());
         }
         cli::VersionInfo::Git { url, commit } => {
             // Git dependency - clone from URL, use commit as version
-            run_add_git_dep(spec.ecosystem, &spec.package, url, commit, &config)?;
+            run_add_git_dep(
+                spec.ecosystem,
+                &spec.package,
+                url,
+                commit,
+                &config,
+                json_output,
+            )?;
         }
         cli::VersionInfo::Version(version) => {
             // Regular version - use registry detection
-            run_add_registry_dep(spec.ecosystem, &spec.package, version, &config)?;
+            run_add_registry_dep(spec.ecosystem, &spec.package, version, &config, json_output)?;
         }
     }
 
@@ -88,6 +102,7 @@ fn run_add_git_dep(
     url: &str,
     commit: &str,
     config: &config::Config,
+    json_output: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // For git deps, use the commit hash as the version
     // Truncate long commit hashes for display/cache path
@@ -100,22 +115,46 @@ fn run_add_git_dep(
     let cache_path = cache::package_dir(ecosystem, package, version)?;
 
     // Check if already cached
-    if cache::exists(ecosystem, package, version)? {
-        println!("Using cached {} {} (git)", package, version);
+    let (cached, cloned_ref) = if cache::exists(ecosystem, package, version)? {
+        if !json_output {
+            println!("Using cached {} {} (git)", package, version);
+        }
+        (true, None)
     } else {
-        println!("Fetching {} {} (git)...", package, version);
+        if !json_output {
+            println!("Fetching {} {} (git)...", package, version);
+        }
 
         // Clone at specific commit
         let result = git::clone_at_commit(url, commit, &cache_path)?;
-        println!("  cloned at {}", result.cloned_ref);
+        if !json_output {
+            println!("  cloned at {}", result.cloned_ref);
+        }
 
         // Run cache eviction if over limit
-        run_cache_eviction(config)?;
-    }
+        run_cache_eviction(config, json_output)?;
+
+        (false, Some(result.cloned_ref))
+    };
 
     // Create symlink in .deps/
     let link_path = deps::link(ecosystem, package, version)?;
-    println!("Created {}", link_path.display());
+
+    if json_output {
+        let mut result = AddResult::new(
+            ecosystem,
+            package,
+            version,
+            &link_path.display().to_string(),
+            cached,
+        );
+        if let Some(ref cloned) = cloned_ref {
+            result = result.with_cloned_ref(cloned);
+        }
+        output::print_json(&result);
+    } else {
+        println!("Created {}", link_path.display());
+    }
 
     Ok(())
 }
@@ -126,43 +165,79 @@ fn run_add_registry_dep(
     package: &str,
     version: &str,
     config: &config::Config,
+    json_output: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let cache_path = cache::package_dir(ecosystem, package, version)?;
 
     // Check if already cached
-    if cache::exists(ecosystem, package, version)? {
-        println!("Using cached {} {}", package, version);
+    let (cached, cloned_ref, warning) = if cache::exists(ecosystem, package, version)? {
+        if !json_output {
+            println!("Using cached {} {}", package, version);
+        }
+        (true, None, None)
     } else {
         // Detect repository URL (check config override first)
         let repo_url = detect_repo_url(ecosystem, package, config)?;
 
-        println!("Fetching {} {}...", package, version);
+        if !json_output {
+            println!("Fetching {} {}...", package, version);
+        }
 
         // Clone the repository
         let result = git::clone(&repo_url, version, package, &cache_path)?;
 
-        if result.used_default_branch {
-            eprintln!(
-                "Warning: No tag found for version {}, cloned {}",
+        let warning = if result.used_default_branch {
+            let msg = format!(
+                "No tag found for version {}, cloned {}",
                 version, result.cloned_ref
             );
+            if !json_output {
+                eprintln!("Warning: {}", msg);
+            }
+            Some(msg)
         } else {
-            println!("  cloned at {}", result.cloned_ref);
-        }
+            if !json_output {
+                println!("  cloned at {}", result.cloned_ref);
+            }
+            None
+        };
 
         // Run cache eviction if over limit
-        run_cache_eviction(config)?;
-    }
+        run_cache_eviction(config, json_output)?;
+
+        (false, Some(result.cloned_ref), warning)
+    };
 
     // Create symlink in .deps/
     let link_path = deps::link(ecosystem, package, version)?;
-    println!("Created {}", link_path.display());
+
+    if json_output {
+        let mut result = AddResult::new(
+            ecosystem,
+            package,
+            version,
+            &link_path.display().to_string(),
+            cached,
+        );
+        if let Some(ref cloned) = cloned_ref {
+            result = result.with_cloned_ref(cloned);
+        }
+        if let Some(ref warn) = warning {
+            result = result.with_warning(warn);
+        }
+        output::print_json(&result);
+    } else {
+        println!("Created {}", link_path.display());
+    }
 
     Ok(())
 }
 
 /// Run cache eviction if cache exceeds configured limit
-fn run_cache_eviction(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+fn run_cache_eviction(
+    config: &config::Config,
+    json_output: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let limit = config.cache_limit_bytes();
     if limit == 0 {
         // No limit configured (0 means unlimited)
@@ -171,7 +246,7 @@ fn run_cache_eviction(config: &config::Config) -> Result<(), Box<dyn std::error:
 
     let evicted = cache::evict_to_limit(limit)?;
 
-    if !evicted.is_empty() {
+    if !evicted.is_empty() && !json_output {
         eprintln!(
             "Cache eviction: removed {} old entries to stay under {}GB limit",
             evicted.len(),
@@ -257,14 +332,30 @@ fn strip_go_version_suffix(path: &str) -> &str {
     path
 }
 
-fn run_remove(spec: cli::DepSpec) -> Result<(), Box<dyn std::error::Error>> {
+fn run_remove(spec: cli::DepSpec, json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     deps::remove(spec.ecosystem, &spec.package)?;
-    println!("Removed {}:{}", spec.ecosystem, spec.package);
+
+    if json_output {
+        output::print_json(&RemoveResult::new(spec.ecosystem, &spec.package, true));
+    } else {
+        println!("Removed {}:{}", spec.ecosystem, spec.package);
+    }
     Ok(())
 }
 
-fn run_list() -> Result<(), Box<dyn std::error::Error>> {
+fn run_list(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     let entries = deps::list()?;
+
+    if json_output {
+        let list_entries: Vec<ListEntry> = entries
+            .iter()
+            .map(|e| ListEntry::new(e.ecosystem, &e.package, &e.version, e.is_broken))
+            .collect();
+        output::print_json(&ListResult {
+            dependencies: list_entries,
+        });
+        return Ok(());
+    }
 
     if entries.is_empty() {
         println!("No dependencies in .deps/");
@@ -286,8 +377,13 @@ fn run_list() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_clean() -> Result<(), Box<dyn std::error::Error>> {
+fn run_clean(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     deps::clean()?;
-    println!("Removed .deps/");
+
+    if json_output {
+        output::print_json(&CleanResult { cleaned: true });
+    } else {
+        println!("Removed .deps/");
+    }
     Ok(())
 }

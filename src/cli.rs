@@ -13,6 +13,10 @@ pub struct Cli {
     /// Remove all .deps/ in current directory
     #[arg(long)]
     pub clean: bool,
+
+    /// Output results as JSON for machine-readable output
+    #[arg(long, global = true)]
+    pub json: bool,
 }
 
 #[derive(Subcommand, Debug)]

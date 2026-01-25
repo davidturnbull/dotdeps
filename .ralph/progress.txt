@@ -560,3 +560,46 @@
 
 ### Next
 - Implement --json flag (task-017) or --dry-run flag (task-018)
+
+## Iteration 15 - task-017: Add --json flag for machine-readable output
+
+### Completed
+- Added --json global flag to CLI argument parser
+- Created output module with JSON serialization types:
+  - AddResult: ecosystem, package, version, path, cached, cloned_ref?, warning?
+  - RemoveResult: ecosystem, package, removed
+  - ListResult: dependencies array with ListEntry items
+  - CleanResult: cleaned boolean
+  - SkipResult: for local path dependencies
+- Implemented JSON output for all commands:
+  - add: shows ecosystem, package, version, path, cached status, and optional cloned_ref/warning
+  - list: shows array of dependencies with broken flag when cache evicted
+  - remove: shows removed status
+  - clean: shows cleaned status
+- Skip fields when not applicable (e.g., cloned_ref only on fresh clones)
+- Cache eviction messages suppressed in JSON mode
+- 130 unit tests pass
+
+### Key decisions
+- Used serde_json for serialization (already a dependency)
+- JSON flag is global (works with all subcommands and --clean)
+- Skip serializing fields that are None/false to keep output clean
+- Warnings included in JSON output as optional field
+- All output goes to stdout (errors still go to stderr)
+
+### Files changed
+- src/cli.rs (added --json flag with global = true)
+- src/output.rs (new - JSON output types)
+- src/main.rs (added json_output parameter threading, conditional output)
+- .ralph/prd.json (task-017 passes: true)
+
+### Verified behavior
+- `dotdeps list --json` returns {"dependencies": [...]}
+- `dotdeps add go:... --json` returns AddResult with all fields
+- `dotdeps remove ... --json` returns RemoveResult
+- `dotdeps --clean --json` returns CleanResult
+- JSON output is valid and parseable by Python json module
+- Human-readable output unchanged when --json not specified
+
+### Next
+- Implement --dry-run flag (task-018)

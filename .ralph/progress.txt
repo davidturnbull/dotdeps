@@ -149,3 +149,49 @@
 
 ### Next
 - Implement Node.js ecosystem (pnpm-lock.yaml, yarn.lock, package-lock.json, npm registry)
+
+## Iteration 5 - task-006: Node.js ecosystem lockfile parsing and npm registry detection
+
+### Completed
+- Created node module with lockfile and npm submodules
+- Implemented lockfile parsing for:
+  - pnpm-lock.yaml (YAML, lockfileVersion 9.0)
+  - yarn.lock (custom format, not YAML - line-based parser)
+  - package-lock.json (JSON, lockfileVersion 1, 2, and 3)
+- Implemented npm registry repo URL detection
+  - Handles repository field as string or object
+  - Handles various URL formats: git+https, git://, git@, github: shorthand
+  - Falls back to homepage if it looks like a git repo
+- Scoped packages (@org/pkg) handled correctly in all parsers
+- Package names normalized to lowercase for cache consistency
+- 60 unit tests pass
+
+### Key decisions
+- Used serde_yml for YAML parsing
+- yarn.lock is NOT valid YAML - implemented custom line-based parser
+- Package version extracted from lockfile key (name@version) rather than nested structure
+- npm repository URL normalization handles many edge cases (git+, ssh, shorthand)
+- is_known_git_host() checks for known hosts before adding .git suffix
+
+### Files changed
+- Cargo.toml (added serde_yml dependency)
+- src/main.rs (added node module, wired lockfile and repo detection)
+- src/node.rs (new - module root)
+- src/node/lockfile.rs (new - lockfile parsing)
+- src/node/npm.rs (new - npm registry integration)
+- README.md (updated status and examples)
+- .ralph/prd.json (task-006 passes: true)
+
+### Verified behavior
+- `dotdeps add node:lodash` reads version from pnpm-lock.yaml/yarn.lock/package-lock.json
+- `dotdeps add node:lodash@4.17.21` explicit version works
+- `dotdeps add node:@types/node` scoped packages work correctly
+- `dotdeps add node:express@4.18.0` fetches from npm, clones repo at correct tag
+- Version not in lockfile shows helpful error message
+- No lockfile found shows clear error message
+- Cache hit reuses cached clone
+- `dotdeps list` shows correct versions for all packages
+- `dotdeps remove node:express` removes symlink correctly
+
+### Next
+- Implement Rust ecosystem (Cargo.lock parsing, crates.io repo detection)

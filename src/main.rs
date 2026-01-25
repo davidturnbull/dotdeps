@@ -2,6 +2,7 @@ mod cache;
 mod cli;
 mod deps;
 mod git;
+mod node;
 mod python;
 
 use clap::Parser;
@@ -87,6 +88,7 @@ fn lookup_version(
 ) -> Result<String, Box<dyn std::error::Error>> {
     match ecosystem {
         cli::Ecosystem::Python => python::find_version(package).map_err(|e| e.into()),
+        cli::Ecosystem::Node => node::find_version(package).map_err(|e| e.into()),
         _ => Err(format!(
             "No version specified. Specify version explicitly: dotdeps add {}:{}@<version>",
             ecosystem, package
@@ -102,6 +104,7 @@ fn detect_repo_url(
 ) -> Result<String, Box<dyn std::error::Error>> {
     match ecosystem {
         cli::Ecosystem::Python => python::detect_repo_url(package).map_err(|e| e.into()),
+        cli::Ecosystem::Node => node::detect_repo_url(package).map_err(|e| e.into()),
         cli::Ecosystem::Go => detect_go_repo_url(package),
         _ => Err(format!(
             "Repository detection for {} not yet implemented. Add override to ~/.config/dotdeps/config.json",

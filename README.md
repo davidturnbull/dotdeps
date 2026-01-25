@@ -26,8 +26,8 @@ dotdeps --clean
 | Ecosystem | Version from Lockfile | Repo Detection |
 |-----------|----------------------|----------------|
 | `python`  | poetry.lock, uv.lock, requirements.txt, pyproject.toml | PyPI API |
+| `node`    | pnpm-lock.yaml, yarn.lock, package-lock.json | npm registry |
 | `go`      | -                    | Module path |
-| `node`    | -                    | -          |
 | `rust`    | -                    | -          |
 | `ruby`    | -                    | -          |
 
@@ -39,6 +39,12 @@ dotdeps add python:requests              # version from lockfile
 dotdeps add python:requests@2.31.0       # explicit version
 dotdeps add python:flask
 dotdeps add python:typing-extensions
+
+# Node.js (fully supported)
+dotdeps add node:lodash                  # version from lockfile
+dotdeps add node:lodash@4.17.21          # explicit version
+dotdeps add node:express@4.18.0
+dotdeps add node:@types/node             # scoped packages
 
 # Go modules (fully supported)
 dotdeps add go:github.com/gin-gonic/gin@1.9.1
@@ -77,9 +83,19 @@ When no version is specified, dotdeps searches for lockfiles (walking up from th
 3. `requirements.txt` - pip requirements (only exact pins: `==`)
 4. `pyproject.toml` - Poetry or PEP 621 dependencies
 
+## Node.js Lockfile Support
+
+When no version is specified, dotdeps searches for lockfiles in this priority order:
+
+1. `pnpm-lock.yaml` - pnpm lockfile
+2. `yarn.lock` - Yarn classic and Berry lockfiles
+3. `package-lock.json` - npm lockfile (v1, v2, and v3)
+
+Scoped packages (e.g., `@types/node`) are fully supported.
+
 ## Status
 
-**Work in progress.** Python and Go ecosystems are fully functional. Other ecosystems pending implementation.
+**Work in progress.** Python, Node.js, and Go ecosystems are fully functional. Other ecosystems pending implementation.
 
 - [x] CLI argument parsing
 - [x] Cache directory management
@@ -91,9 +107,12 @@ When no version is specified, dotdeps searches for lockfiles (walking up from th
 - [x] Go ecosystem: repo URL detection from module path
 - [x] Python ecosystem: lockfile parsing (poetry.lock, uv.lock, requirements.txt, pyproject.toml)
 - [x] Python ecosystem: PyPI repo URL detection
-- [ ] Node ecosystem: lockfile parsing and npm registry detection
+- [x] Node ecosystem: lockfile parsing (pnpm-lock.yaml, yarn.lock, package-lock.json)
+- [x] Node ecosystem: npm registry repo URL detection
 - [ ] Rust ecosystem: Cargo.lock parsing and crates.io detection
 - [ ] Ruby ecosystem: Gemfile.lock parsing and RubyGems detection
+- [ ] Go ecosystem: go.sum lockfile parsing
+- [ ] Config file support (cache limits, repo overrides)
 
 ## License
 

@@ -69,6 +69,68 @@
         "Verify remove deletes only the symlink, not cache"
       ],
       "passes": true
+    },
+    {
+      "id": "task-006",
+      "category": "functional",
+      "description": "Implement Node.js ecosystem: lockfile parsing and npm registry detection",
+      "steps": [
+        "Parse pnpm-lock.yaml for version lookup",
+        "Parse yarn.lock for version lookup",
+        "Parse package-lock.json for version lookup",
+        "Detect repo URL from npm registry",
+        "Handle scoped packages (@org/pkg) correctly",
+        "Verify version detection from pnpm-lock.yaml works",
+        "Verify repo detection for 'lodash' package works"
+      ],
+      "passes": true
+    },
+    {
+      "id": "task-007",
+      "category": "functional",
+      "description": "Implement Rust ecosystem: Cargo.lock parsing and crates.io repo detection",
+      "steps": [
+        "Parse Cargo.lock for version lookup",
+        "Detect repo URL from crates.io registry",
+        "Verify version detection from Cargo.lock works",
+        "Verify repo detection for 'serde' package works"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-008",
+      "category": "functional",
+      "description": "Implement Ruby ecosystem: Gemfile.lock parsing and RubyGems repo detection",
+      "steps": [
+        "Parse Gemfile.lock for version lookup",
+        "Detect repo URL from RubyGems source_code_uri",
+        "Verify version detection from Gemfile.lock works",
+        "Verify repo detection for 'rails' package works"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-009",
+      "category": "functional",
+      "description": "Implement Go ecosystem: go.sum parsing",
+      "steps": [
+        "Parse go.sum for version lookup",
+        "Verify version detection from go.sum works",
+        "Go repo URL detection already implemented via module path"
+      ],
+      "passes": false
+    },
+    {
+      "id": "task-010",
+      "category": "functional",
+      "description": "Implement config file support for cache limits and overrides",
+      "steps": [
+        "Read ~/.config/dotdeps/config.json",
+        "Support cache_limit_gb setting",
+        "Support overrides for custom repo URLs",
+        "Verify override repo URL is used when detection fails"
+      ],
+      "passes": false
     }
   ]
 }

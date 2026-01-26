@@ -8,8 +8,20 @@ LLMs hallucinate APIs and rely on stale training data. When documentation is mis
 
 ## Installation
 
+### Pre-built Binaries (Recommended)
+
+Download from [GitHub Releases](https://github.com/davidturnbull/dotdeps/releases/latest).
+
+**macOS/Linux one-liner:**
+
 ```bash
-cargo install --path .
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/davidturnbull/dotdeps/releases/latest/download/dotdeps-installer.sh | sh
+```
+
+### From Source (Rust users)
+
+```bash
+cargo install --git https://github.com/davidturnbull/dotdeps
 ```
 
 ## Usage
@@ -152,30 +164,6 @@ Optional config file at `~/.config/dotdeps/config.json`:
 - `overrides`: Per-ecosystem, per-package repository URL overrides. Use when automatic detection fails.
 
 Override lookup is case-insensitive for package names.
-
-## Status
-
-**Functional.** Python, Node.js, Rust, Go, and Ruby ecosystems are fully supported with lockfile parsing and registry-based repo detection. Config file with repo overrides and LRU cache eviction are implemented.
-
-- [x] CLI argument parsing
-- [x] Cache directory management
-- [x] Symlink/copy creation
-- [x] List dependencies with broken symlink detection
-- [x] Remove dependencies
-- [x] Clean command
-- [x] Git cloning with tag resolution (shallow clone, --depth 1)
-- [x] Go ecosystem: repo URL detection from module path
-- [x] Python ecosystem: lockfile parsing (poetry.lock, uv.lock, requirements.txt, pyproject.toml)
-- [x] Python ecosystem: PyPI repo URL detection
-- [x] Node ecosystem: lockfile parsing (pnpm-lock.yaml, yarn.lock, package-lock.json)
-- [x] Node ecosystem: npm registry repo URL detection
-- [x] Rust ecosystem: Cargo.lock parsing
-- [x] Rust ecosystem: crates.io repo URL detection
-- [x] Ruby ecosystem: Gemfile.lock parsing
-- [x] Ruby ecosystem: RubyGems repo URL detection
-- [x] Go ecosystem: go.sum lockfile parsing
-- [x] Config file support (repo overrides)
-- [x] Cache eviction (LRU by atime)
 
 ## License
 

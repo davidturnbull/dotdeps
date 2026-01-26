@@ -5,6 +5,7 @@ edition = "2024"
 description = "CLI tool that fetches dependency source code for LLM context"
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/davidturnbull/dotdeps"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -15,3 +16,8 @@ serde_yml = "0.0.12"
 thiserror = "2"
 toml = "0.8"
 ureq = "3"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

@@ -5,6 +5,7 @@ mod context;
 mod deps;
 mod git;
 mod go;
+mod init;
 mod lockfile;
 mod node;
 mod output;
@@ -15,7 +16,9 @@ mod swift;
 
 use clap::Parser;
 use cli::{Cli, Command};
-use output::{AddResult, CleanResult, ListEntry, ListResult, RemoveResult, SkipResult};
+use output::{
+    AddResult, CleanResult, InitAction, InitOutput, ListEntry, ListResult, RemoveResult, SkipResult,
+};
 
 fn main() {
     let cli = Cli::parse();
@@ -23,6 +26,10 @@ fn main() {
     let dry_run = cli.dry_run;
 
     let result = match cli.command {
+        Some(Command::Init {
+            skip_gitignore,
+            skip_instructions,
+        }) => run_init_cmd(skip_gitignore, skip_instructions, json_output, dry_run),
         Some(Command::Add { spec }) => run_add(spec, json_output, dry_run),
         Some(Command::Remove { spec }) => run_remove(spec, json_output, dry_run),
         Some(Command::List) => run_list(json_output),
@@ -38,6 +45,139 @@ fn main() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
+}
+
+fn run_init_cmd(
+    skip_gitignore: bool,
+    skip_instructions: bool,
+    json_output: bool,
+    dry_run: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use init::{ActionResult, InitConfig};
+
+    let config = InitConfig {
+        skip_gitignore,
+        skip_instructions,
+        dry_run,
+    };
+
+    let result = init::run_init(config)?;
+    let prefix = if dry_run { "[dry-run] " } else { "" };
+
+    if json_output {
+        let mut actions = Vec::new();
+
+        // .deps/ action
+        match &result.deps_dir {
+            ActionResult::Created(msg) => {
+                actions.push(InitAction::new("create_deps_dir", "created").with_message(msg));
+            }
+            ActionResult::AlreadyExists(msg) => {
+                actions.push(InitAction::new("create_deps_dir", "exists").with_message(msg));
+            }
+            ActionResult::Skipped => {}
+        }
+
+        // .gitignore action
+        match &result.gitignore {
+            ActionResult::Created(msg) => {
+                actions.push(
+                    InitAction::new("update_gitignore", "created")
+                        .with_file(".gitignore")
+                        .with_message(msg),
+                );
+            }
+            ActionResult::AlreadyExists(msg) => {
+                actions.push(
+                    InitAction::new("update_gitignore", "exists")
+                        .with_file(".gitignore")
+                        .with_message(msg),
+                );
+            }
+            ActionResult::Skipped => {
+                actions.push(InitAction::new("update_gitignore", "skipped"));
+            }
+        }
+
+        // instructions action
+        match &result.instructions {
+            ActionResult::Created(msg) => {
+                let mut action = InitAction::new("add_instructions", "created").with_message(msg);
+                if let Some(ref file) = result.instructions_file {
+                    action = action.with_file(file);
+                }
+                actions.push(action);
+            }
+            ActionResult::AlreadyExists(msg) => {
+                let mut action = InitAction::new("add_instructions", "exists").with_message(msg);
+                if let Some(ref file) = result.instructions_file {
+                    action = action.with_file(file);
+                }
+                actions.push(action);
+            }
+            ActionResult::Skipped => {
+                actions.push(InitAction::new("add_instructions", "skipped"));
+            }
+        }
+
+        let output = InitOutput {
+            initialized: !result.already_initialized(),
+            actions,
+            dry_run,
+        };
+        output::print_json(&output);
+    } else if result.already_initialized() {
+        println!("\ndotdeps is already initialized. Nothing to do.");
+    } else {
+        println!("\nInitializing dotdeps...\n");
+
+        // Step 1: .deps/ directory
+        println!("[1/3] Creating .deps/ directory");
+        match &result.deps_dir {
+            ActionResult::Created(msg) => println!("{}      {}", prefix, msg),
+            ActionResult::AlreadyExists(msg) => println!("      {}", msg),
+            ActionResult::Skipped => {}
+        }
+
+        // Step 2: .gitignore
+        if !skip_gitignore {
+            println!("\n[2/3] Updating .gitignore");
+            match &result.gitignore {
+                ActionResult::Created(msg) => println!("{}      {}", prefix, msg),
+                ActionResult::AlreadyExists(msg) => println!("      {}", msg),
+                ActionResult::Skipped => {}
+            }
+        }
+
+        // Step 3: instructions
+        if !skip_instructions {
+            println!("\n[3/3] Adding usage instructions");
+            if let Some(ref file) = result.instructions_file {
+                match &result.instructions {
+                    ActionResult::AlreadyExists(_) => {
+                        println!("      {} already has dotdeps instructions", file);
+                    }
+                    ActionResult::Created(msg) => {
+                        // Check if msg indicates we added to an existing file vs created new
+                        let was_existing = msg.starts_with("Added");
+                        if was_existing {
+                            println!("      Detected {}", file);
+                        }
+                        println!("{}      {}", prefix, msg);
+                    }
+                    ActionResult::Skipped => {}
+                }
+            }
+        }
+
+        println!("\nDone! dotdeps is ready to use.");
+        println!("\nQuick start:");
+        println!("  dotdeps add python:requests    # Fetch a dependency");
+        println!("  dotdeps list                   # See what's fetched");
+        println!("  dotdeps context                # Show LLM instructions");
+    }
+
+    Ok(())
 }
 
 fn run_add(

@@ -49,6 +49,38 @@ pub fn scenarios() -> Vec<Scenario> {
             run: scenario_symlink_list_remove_clean,
         },
         Scenario {
+            name: "init_fresh_directory",
+            run: scenario_init_fresh,
+        },
+        Scenario {
+            name: "init_already_initialized",
+            run: scenario_init_already_done,
+        },
+        Scenario {
+            name: "init_with_existing_claude_md",
+            run: scenario_init_with_claude_md,
+        },
+        Scenario {
+            name: "init_with_existing_agents_md",
+            run: scenario_init_with_agents_md,
+        },
+        Scenario {
+            name: "init_dry_run",
+            run: scenario_init_dry_run,
+        },
+        Scenario {
+            name: "init_json_output",
+            run: scenario_init_json,
+        },
+        Scenario {
+            name: "init_skip_flags",
+            run: scenario_init_skip_flags,
+        },
+        Scenario {
+            name: "init_gitignore_already_has_deps",
+            run: scenario_init_gitignore_has_deps,
+        },
+        Scenario {
             name: "python_requirements",
             run: scenario_python_requirements,
         },
@@ -208,6 +240,177 @@ fn scenario_symlink_list_remove_clean(ctx: &TestContext) -> Result<(), String> {
 
     let clean = ctx.run_dotdeps(&env, &["clean"], &env.root)?;
     clean.assert_success()?;
+    Ok(())
+}
+
+// =============================================================================
+// Init command scenarios
+// =============================================================================
+
+fn scenario_init_fresh(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-fresh")?;
+
+    let output = ctx.run_dotdeps(&env, &["init"], &env.root)?;
+    output.assert_success()?;
+    output.assert_stdout_contains("Created .deps/")?;
+    output.assert_stdout_contains("Added \".deps/\" to .gitignore")?;
+    output.assert_stdout_contains("Created AGENTS.md with dotdeps instructions")?;
+
+    // Verify files created
+    if !env.root.join(".deps").is_dir() {
+        return Err(".deps directory was not created".to_string());
+    }
+    if !env.root.join(".gitignore").exists() {
+        return Err(".gitignore was not created".to_string());
+    }
+    if !env.root.join("AGENTS.md").exists() {
+        return Err("AGENTS.md was not created".to_string());
+    }
+
+    let gitignore = read_file(&env.root.join(".gitignore"))?;
+    if !gitignore.contains(".deps/") {
+        return Err(".gitignore does not contain .deps/".to_string());
+    }
+
+    let agents_md = read_file(&env.root.join("AGENTS.md"))?;
+    if !agents_md.contains("<!-- dotdeps:instructions -->") {
+        return Err("AGENTS.md does not contain marker comment".to_string());
+    }
+
+    Ok(())
+}
+
+fn scenario_init_already_done(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-already")?;
+
+    // First init
+    ctx.run_dotdeps(&env, &["init"], &env.root)?
+        .assert_success()?;
+
+    // Second init should skip everything
+    let output = ctx.run_dotdeps(&env, &["init"], &env.root)?;
+    output.assert_success()?;
+    output.assert_stdout_contains("already initialized")?;
+
+    Ok(())
+}
+
+fn scenario_init_with_claude_md(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-claude-md")?;
+    write_file(
+        &env.root.join("CLAUDE.md"),
+        "# Existing Instructions\n\nSome content.",
+    )?;
+
+    let output = ctx.run_dotdeps(&env, &["init"], &env.root)?;
+    output.assert_success()?;
+    output.assert_stdout_contains("Added dotdeps instructions to CLAUDE.md")?;
+
+    let content = read_file(&env.root.join("CLAUDE.md"))?;
+    if !content.contains("# Existing Instructions") {
+        return Err("CLAUDE.md lost existing content".to_string());
+    }
+    if !content.contains("<!-- dotdeps:instructions -->") {
+        return Err("CLAUDE.md does not contain marker comment".to_string());
+    }
+
+    Ok(())
+}
+
+fn scenario_init_with_agents_md(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-agents-md")?;
+    write_file(&env.root.join("AGENTS.md"), "# Agent Instructions\n")?;
+
+    let output = ctx.run_dotdeps(&env, &["init"], &env.root)?;
+    output.assert_success()?;
+    output.assert_stdout_contains("Added dotdeps instructions to AGENTS.md")?;
+
+    // Verify existing content preserved
+    let content = read_file(&env.root.join("AGENTS.md"))?;
+    if !content.contains("# Agent Instructions") {
+        return Err("AGENTS.md lost existing content".to_string());
+    }
+
+    Ok(())
+}
+
+fn scenario_init_dry_run(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-dry-run")?;
+
+    let output = ctx.run_dotdeps(&env, &["init", "--dry-run"], &env.root)?;
+    output.assert_success()?;
+    output.assert_stdout_contains("[dry-run]")?;
+
+    // Nothing should be created
+    if env.root.join(".deps").exists() {
+        return Err(".deps was created in dry-run mode".to_string());
+    }
+    if env.root.join(".gitignore").exists() {
+        return Err(".gitignore was created in dry-run mode".to_string());
+    }
+    if env.root.join("AGENTS.md").exists() {
+        return Err("AGENTS.md was created in dry-run mode".to_string());
+    }
+
+    Ok(())
+}
+
+fn scenario_init_json(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-json")?;
+
+    let output = ctx.run_dotdeps(&env, &["init", "--json"], &env.root)?;
+    output.assert_success()?;
+
+    let json = parse_json(&output.stdout)?;
+    if json.get("initialized") != Some(&serde_json::Value::Bool(true)) {
+        return Err("JSON output missing initialized: true".to_string());
+    }
+    let actions = json.get("actions").and_then(|v| v.as_array());
+    if actions.map(|a| a.len()) != Some(3) {
+        return Err(format!("Expected 3 actions, got {:?}", actions));
+    }
+
+    Ok(())
+}
+
+fn scenario_init_skip_flags(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-skip")?;
+
+    let output = ctx.run_dotdeps(
+        &env,
+        &["init", "--skip-gitignore", "--skip-instructions"],
+        &env.root,
+    )?;
+    output.assert_success()?;
+
+    // Only .deps/ should be created
+    if !env.root.join(".deps").is_dir() {
+        return Err(".deps directory was not created".to_string());
+    }
+    if env.root.join(".gitignore").exists() {
+        return Err(".gitignore was created despite --skip-gitignore".to_string());
+    }
+    if env.root.join("AGENTS.md").exists() {
+        return Err("AGENTS.md was created despite --skip-instructions".to_string());
+    }
+
+    Ok(())
+}
+
+fn scenario_init_gitignore_has_deps(ctx: &TestContext) -> Result<(), String> {
+    let env = ctx.create_env("init-gitignore")?;
+    write_file(&env.root.join(".gitignore"), "node_modules/\n.deps/\n")?;
+
+    let output = ctx.run_dotdeps(&env, &["init"], &env.root)?;
+    output.assert_success()?;
+    output.assert_stdout_contains(".gitignore already includes .deps/")?;
+
+    // .gitignore should be unchanged
+    let content = read_file(&env.root.join(".gitignore"))?;
+    if content != "node_modules/\n.deps/\n" {
+        return Err(format!(".gitignore was modified: {:?}", content));
+    }
+
     Ok(())
 }
 

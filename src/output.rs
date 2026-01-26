@@ -142,6 +142,47 @@ impl SkipResult {
     }
 }
 
+/// A single action taken during init
+#[derive(Debug, Serialize)]
+pub struct InitAction {
+    pub action: String,
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+/// Result of an init operation
+#[derive(Debug, Serialize)]
+pub struct InitOutput {
+    pub initialized: bool,
+    pub actions: Vec<InitAction>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub dry_run: bool,
+}
+
+impl InitAction {
+    pub fn new(action: &str, status: &str) -> Self {
+        Self {
+            action: action.to_string(),
+            status: status.to_string(),
+            file: None,
+            message: None,
+        }
+    }
+
+    pub fn with_file(mut self, file: &str) -> Self {
+        self.file = Some(file.to_string());
+        self
+    }
+
+    pub fn with_message(mut self, message: &str) -> Self {
+        self.message = Some(message.to_string());
+        self
+    }
+}
+
 /// Print JSON output to stdout
 pub fn print_json<T: Serialize>(value: &T) {
     match serde_json::to_string_pretty(value) {

@@ -21,6 +21,16 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    /// Initialize dotdeps in the current directory
+    Init {
+        /// Skip adding .deps/ to .gitignore
+        #[arg(long)]
+        skip_gitignore: bool,
+
+        /// Skip adding usage instructions to CLAUDE.md/AGENTS.md
+        #[arg(long)]
+        skip_instructions: bool,
+    },
     /// Add a dependency to .deps/
     Add {
         /// Dependency specification: <ecosystem>:<package>[@<version>]

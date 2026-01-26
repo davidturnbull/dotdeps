@@ -43,25 +43,23 @@ pub fn render_context() -> Result<Option<String>, Box<dyn std::error::Error>> {
 
 fn format_context(entries: &[(Ecosystem, Vec<String>)]) -> String {
     let mut output = String::new();
-    output.push_str("[dotdeps] Your training data may be outdated or incomplete for the libraries in this project. When you're unsure how a library works, fetch and read the actual source code instead of guessing.\n\n");
-    output.push_str("Fetch a dependency:\n");
-    output.push_str("  dotdeps add <ecosystem>:<package>\n\n");
-    output.push_str(
-        "This clones the repository into .deps/<ecosystem>/<package>/ for direct browsing.\n\n",
-    );
-    output.push_str("Available in this project:\n");
+    output.push_str("## Dependency Source Code\n\n");
+    output.push_str("Libraries in this project may have changed since your training. Before writing code that uses these dependencies, fetch their source to verify API details.\n\n");
+    output.push_str("```bash\n");
+    output.push_str("dotdeps add <ecosystem>:<package>\n");
+    output.push_str("```\n\n");
+    output.push_str("Source is cloned to `.deps/<ecosystem>/<package>/` for browsing.\n\n");
+    output.push_str("**Available in this project:**\n\n");
+    output.push_str("```bash\n");
 
     for (ecosystem, deps) in entries {
         for dep in deps {
-            output.push_str(&format!("  dotdeps add {}:{}\n", ecosystem, dep));
+            output.push_str(&format!("dotdeps add {}:{}\n", ecosystem, dep));
         }
     }
 
-    output.push_str("\nAfter fetching, spawn a sub-agent to explore the implementation:\n");
-    output.push_str(
-        "  Task: Read .deps/python/requests/src/ to understand how Session handles retries\n\n",
-    );
-    output.push_str("The source code is the truth. Use it.\n");
+    output.push_str("```\n\n");
+    output.push_str("After fetching, use a sub-agent to explore the source and answer specific questions about the implementation.\n");
     output
 }
 
@@ -120,16 +118,17 @@ mod tests {
         let entries = vec![(crate::cli::Ecosystem::Python, vec!["requests".to_string()])];
         let output = super::format_context(&entries);
         let expected = concat!(
-            "[dotdeps] Your training data may be outdated or incomplete for the libraries in this project. When you're unsure how a library works, fetch and read the actual source code instead of guessing.\n\n",
-            "Fetch a dependency:\n",
-            "  dotdeps add <ecosystem>:<package>\n\n",
-            "This clones the repository into .deps/<ecosystem>/<package>/ for direct browsing.\n\n",
-            "Available in this project:\n",
-            "  dotdeps add python:requests\n",
-            "\n",
-            "After fetching, spawn a sub-agent to explore the implementation:\n",
-            "  Task: Read .deps/python/requests/src/ to understand how Session handles retries\n\n",
-            "The source code is the truth. Use it.\n",
+            "## Dependency Source Code\n\n",
+            "Libraries in this project may have changed since your training. Before writing code that uses these dependencies, fetch their source to verify API details.\n\n",
+            "```bash\n",
+            "dotdeps add <ecosystem>:<package>\n",
+            "```\n\n",
+            "Source is cloned to `.deps/<ecosystem>/<package>/` for browsing.\n\n",
+            "**Available in this project:**\n\n",
+            "```bash\n",
+            "dotdeps add python:requests\n",
+            "```\n\n",
+            "After fetching, use a sub-agent to explore the source and answer specific questions about the implementation.\n",
         );
         assert_eq!(output, expected);
     }

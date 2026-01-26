@@ -14,17 +14,22 @@ const MARKER_COMMENT: &str = "<!-- dotdeps:instructions -->";
 const INSTRUCTIONS: &str = r#"<!-- dotdeps:instructions -->
 ## Dependency Source Code
 
-This project uses [dotdeps](https://github.com/davidturnbull/dotdeps) to fetch dependency source code for LLM context.
-
-When you're unsure how a library works, fetch and read the actual source:
+Before writing code that uses external libraries, fetch and read their source to ensure accuracy:
 
 ```bash
-dotdeps add <ecosystem>:<package>    # Fetch source to .deps/
+dotdeps add <ecosystem>:<package>
 ```
 
-After fetching, read the source in `.deps/<ecosystem>/<package>/` to understand the implementation.
+This clones the library into `.deps/<ecosystem>/<package>/` where you can browse the actual implementation.
 
-Available ecosystems: python, node, rust, go, ruby, swift
+**When to use:**
+- Implementing features with a dependency's API
+- Debugging behavior that involves external code
+- Verifying your assumptions about how a library works
+
+**Ecosystems:** python, node, rust, go, ruby, swift
+
+After fetching, read the relevant source files. The implementation is the truth—don't rely on training data for API details.
 "#;
 
 /// Configuration for init command

@@ -24,6 +24,16 @@ dotdeps solves this by cloning dependency source code to `.deps/` where your age
 
   This creates `.deps/`, updates `.gitignore`, and adds usage instructions to `AGENTS.md` (or `CLAUDE.md` if it exists).
 
+## Keeping up to date
+
+Run `dotdeps update` periodically to get the latest version:
+
+```bash
+dotdeps update
+```
+
+Use `dotdeps update --check` to check for updates without installing.
+
 ## Commands
 
 ### init

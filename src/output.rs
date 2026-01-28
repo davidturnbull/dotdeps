@@ -162,6 +162,55 @@ pub struct InitOutput {
     pub dry_run: bool,
 }
 
+/// Result of an update check operation
+#[derive(Debug, Serialize)]
+pub struct UpdateCheckOutput {
+    pub current_version: String,
+    pub latest_version: String,
+    pub update_available: bool,
+}
+
+/// Result of an update operation
+#[derive(Debug, Serialize)]
+pub struct UpdateOutput {
+    pub updated: bool,
+    pub current_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub new_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+impl UpdateCheckOutput {
+    pub fn new(current: &str, latest: &str, available: bool) -> Self {
+        Self {
+            current_version: current.to_string(),
+            latest_version: latest.to_string(),
+            update_available: available,
+        }
+    }
+}
+
+impl UpdateOutput {
+    pub fn up_to_date(version: &str) -> Self {
+        Self {
+            updated: false,
+            current_version: version.to_string(),
+            new_version: None,
+            message: Some("Already up to date".to_string()),
+        }
+    }
+
+    pub fn updated(old_version: &str, new_version: &str) -> Self {
+        Self {
+            updated: true,
+            current_version: old_version.to_string(),
+            new_version: Some(new_version.to_string()),
+            message: None,
+        }
+    }
+}
+
 impl InitAction {
     pub fn new(action: &str, status: &str) -> Self {
         Self {

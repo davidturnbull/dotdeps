@@ -47,6 +47,12 @@ pub enum Command {
     Context,
     /// Remove all .deps/ in current directory
     Clean,
+    /// Update dotdeps to the latest version
+    Update {
+        /// Check for updates without installing
+        #[arg(long)]
+        check: bool,
+    },
 }
 
 /// Supported package ecosystems

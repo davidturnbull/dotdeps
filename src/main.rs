@@ -13,17 +13,28 @@ mod python;
 mod ruby;
 mod rust;
 mod swift;
+mod update;
 
 use clap::Parser;
 use cli::{Cli, Command};
 use output::{
-    AddResult, CleanResult, InitAction, InitOutput, ListEntry, ListResult, RemoveResult, SkipResult,
+    AddResult, CleanResult, InitAction, InitOutput, ListEntry, ListResult, RemoveResult,
+    SkipResult, UpdateCheckOutput, UpdateOutput,
 };
 
 fn main() {
     let cli = Cli::parse();
     let json_output = cli.json;
     let dry_run = cli.dry_run;
+
+    // Check for updates periodically (skip for update command itself and JSON output)
+    let is_update_cmd = matches!(cli.command, Some(Command::Update { .. }));
+    if !is_update_cmd
+        && !json_output
+        && let Some(msg) = update::maybe_notify_update()
+    {
+        eprintln!("{}\n", msg);
+    }
 
     let result = match cli.command {
         Some(Command::Init {
@@ -35,6 +46,7 @@ fn main() {
         Some(Command::List) => run_list(json_output),
         Some(Command::Context) => run_context(),
         Some(Command::Clean) => run_clean(json_output, dry_run),
+        Some(Command::Update { check }) => run_update(check, json_output),
         None => {
             eprintln!("No command specified. Use --help for usage information.");
             std::process::exit(1);
@@ -598,5 +610,54 @@ fn run_context() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(output) = context::render_context()? {
         print!("{}", output);
     }
+    Ok(())
+}
+
+fn run_update(check_only: bool, json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if check_only {
+        let result = update::check_for_update()?;
+
+        if json_output {
+            output::print_json(&UpdateCheckOutput::new(
+                &result.current_version,
+                &result.latest_version,
+                result.update_available,
+            ));
+        } else if result.update_available {
+            println!(
+                "Update available: {} -> {}",
+                result.current_version, result.latest_version
+            );
+            println!("Run 'dotdeps update' to install.");
+        } else {
+            println!("dotdeps {} is the latest version.", result.current_version);
+        }
+    } else {
+        let current_version = env!("CARGO_PKG_VERSION");
+
+        if !json_output {
+            println!("Checking for updates...");
+        }
+
+        let status = update::run_update(!json_output)?;
+
+        match status {
+            self_update::Status::UpToDate(v) => {
+                if json_output {
+                    output::print_json(&UpdateOutput::up_to_date(&v));
+                } else {
+                    println!("dotdeps {} is already up to date.", v);
+                }
+            }
+            self_update::Status::Updated(v) => {
+                if json_output {
+                    output::print_json(&UpdateOutput::updated(current_version, &v));
+                } else {
+                    println!("Updated dotdeps to version {}.", v);
+                }
+            }
+        }
+    }
+
     Ok(())
 }

@@ -189,10 +189,12 @@ fn copy_dir_recursive(from: &Path, to: &Path) -> Result<(), DepsError> {
 }
 
 /// Remove a dependency from .deps/
-pub fn remove(ecosystem: Ecosystem, package: &str) -> Result<(), DepsError> {
+/// Returns true if the dependency existed and was removed, false if it didn't exist
+pub fn remove(ecosystem: Ecosystem, package: &str) -> Result<bool, DepsError> {
     let link_path = package_path(ecosystem, package);
+    let existed = link_path.exists() || link_path.symlink_metadata().is_ok();
 
-    if link_path.exists() || link_path.symlink_metadata().is_ok() {
+    if existed {
         remove_link(&link_path)?;
     }
 
@@ -205,7 +207,7 @@ pub fn remove(ecosystem: Ecosystem, package: &str) -> Result<(), DepsError> {
         let _ = fs::remove_dir(&ecosystem_dir);
     }
 
-    Ok(())
+    Ok(existed)
 }
 
 /// List all dependencies in .deps/
@@ -320,12 +322,14 @@ fn extract_version_from_path(path: &Path) -> String {
 }
 
 /// Remove the entire .deps directory
-pub fn clean() -> Result<(), DepsError> {
+/// Returns true if the directory existed and was removed, false if it didn't exist
+pub fn clean() -> Result<bool, DepsError> {
     let deps = deps_dir();
-    if deps.exists() {
+    let existed = deps.exists();
+    if existed {
         fs::remove_dir_all(&deps).map_err(|source| DepsError::Remove { path: deps, source })?;
     }
-    Ok(())
+    Ok(existed)
 }
 
 #[cfg(test)]

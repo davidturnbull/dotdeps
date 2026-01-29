@@ -539,18 +539,23 @@ fn run_remove(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let prefix = if dry_run { "[dry-run] " } else { "" };
 
-    if !dry_run {
-        deps::remove(spec.ecosystem, &spec.package)?;
-    }
+    let removed = if dry_run {
+        // Check if it would be removed
+        deps::package_path(spec.ecosystem, &spec.package).exists()
+    } else {
+        deps::remove(spec.ecosystem, &spec.package)?
+    };
 
     if json_output {
-        let mut result = RemoveResult::new(spec.ecosystem, &spec.package, true);
+        let mut result = RemoveResult::new(spec.ecosystem, &spec.package, removed);
         if dry_run {
             result = result.with_dry_run();
         }
         output::print_json(&result);
-    } else {
+    } else if removed {
         println!("{}Removed {}:{}", prefix, spec.ecosystem, spec.package);
+    } else {
+        println!("{}:{} not found", spec.ecosystem, spec.package);
     }
     Ok(())
 }
@@ -592,21 +597,26 @@ fn run_list(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
 fn run_clean(json_output: bool, dry_run: bool) -> Result<(), Box<dyn std::error::Error>> {
     let prefix = if dry_run { "[dry-run] " } else { "" };
 
-    if !dry_run {
-        deps::clean()?;
-    }
+    let cleaned = if dry_run {
+        // Check if it would be cleaned
+        deps::deps_dir().exists()
+    } else {
+        deps::clean()?
+    };
 
     if json_output {
         let mut result = CleanResult {
-            cleaned: true,
+            cleaned,
             dry_run: false,
         };
         if dry_run {
             result.dry_run = true;
         }
         output::print_json(&result);
-    } else {
+    } else if cleaned {
         println!("{}Removed .deps/", prefix);
+    } else {
+        println!(".deps/ not present");
     }
     Ok(())
 }

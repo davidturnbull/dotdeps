@@ -22,7 +22,7 @@ dotdeps solves this by cloning dependency source code to `.deps/` where your age
    dotdeps init
    ```
 
-  This creates `.deps/`, updates `.gitignore`, and adds usage instructions to `AGENTS.md` (or `CLAUDE.md` if it exists).
+This creates `.deps/`, updates `.gitignore`, and adds usage instructions to `AGENTS.md` (or `CLAUDE.md` if it exists).
 
 ## Keeping up to date
 
@@ -125,6 +125,10 @@ dotdeps context [OPTIONS]
 #### Options
 
 - `--json` - Output results as JSON
+
+#### Lockfile discovery
+
+`dotdeps context` searches upward from the current directory to find lockfiles. In monorepos or nested project layouts, this means dependencies from a parent directory's lockfile may be included. Run from the specific project directory you want to analyze.
 
 ### clean
 

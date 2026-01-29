@@ -72,6 +72,16 @@ fn now_timestamp() -> u64 {
         .as_secs()
 }
 
+/// Get GitHub API token from environment variables.
+/// Checks GITHUB_TOKEN first, then falls back to HOMEBREW_GITHUB_API_TOKEN
+/// (commonly set on macOS for Homebrew users).
+fn get_github_token() -> Option<String> {
+    std::env::var("GITHUB_TOKEN")
+        .or_else(|_| std::env::var("HOMEBREW_GITHUB_API_TOKEN"))
+        .ok()
+        .filter(|t| !t.is_empty())
+}
+
 /// Check GitHub for the latest release version
 pub fn check_for_update() -> Result<UpdateCheckResult, Box<dyn std::error::Error>> {
     let current_version = env!("CARGO_PKG_VERSION").to_string();
@@ -82,10 +92,23 @@ pub fn check_for_update() -> Result<UpdateCheckResult, Box<dyn std::error::Error
         REPO_OWNER, REPO_NAME
     );
 
-    let response = ureq::get(&url)
+    let mut request = ureq::get(&url)
         .header("User-Agent", "dotdeps")
-        .header("Accept", "application/vnd.github.v3+json")
-        .call()?;
+        .header("Accept", "application/vnd.github.v3+json");
+
+    // Use GitHub token for authentication if available (avoids rate limiting)
+    if let Some(token) = get_github_token() {
+        request = request.header("Authorization", &format!("Bearer {}", token));
+    }
+
+    let response = request.call().map_err(|e| {
+        if let ureq::Error::StatusCode(status) = &e
+            && (*status == 403 || *status == 429)
+        {
+            return "GitHub API rate limit exceeded. Set GITHUB_TOKEN or HOMEBREW_GITHUB_API_TOKEN to authenticate:\n  export GITHUB_TOKEN=<your-token>".to_string().into();
+        }
+        Box::new(e) as Box<dyn std::error::Error>
+    })?;
 
     let body = response
         .into_body()
@@ -141,15 +164,27 @@ fn is_newer_version(latest: &str, current: &str) -> bool {
 
 /// Perform the actual update using self_update
 pub fn run_update(show_progress: bool) -> Result<self_update::Status, Box<dyn std::error::Error>> {
-    let status = self_update::backends::github::Update::configure()
+    let mut builder = self_update::backends::github::Update::configure();
+    builder
         .repo_owner(REPO_OWNER)
         .repo_name(REPO_NAME)
         .bin_name("dotdeps")
         .show_download_progress(show_progress)
         .show_output(show_progress)
-        .current_version(env!("CARGO_PKG_VERSION"))
-        .build()?
-        .update()?;
+        .current_version(env!("CARGO_PKG_VERSION"));
+
+    // Use GitHub token for authentication if available (avoids rate limiting)
+    if let Some(token) = get_github_token() {
+        builder.auth_token(&token);
+    }
+
+    let status = builder.build()?.update().map_err(|e| {
+        let msg = e.to_string();
+        if msg.contains("403") || msg.contains("rate limit") {
+            return "GitHub API rate limit exceeded. Set GITHUB_TOKEN or HOMEBREW_GITHUB_API_TOKEN to authenticate:\n  export GITHUB_TOKEN=<your-token>".to_string().into();
+        }
+        Box::new(e) as Box<dyn std::error::Error>
+    })?;
 
     // Update state after successful update
     let state = UpdateState {

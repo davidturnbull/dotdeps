@@ -50,7 +50,7 @@ pub struct PackageOverride {
 }
 
 /// Top-level configuration structure
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     /// Maximum cache size in GB (default: 5)
     #[serde(default = "default_cache_limit")]
@@ -64,6 +64,15 @@ pub struct Config {
 
 fn default_cache_limit() -> f64 {
     DEFAULT_CACHE_LIMIT_GB
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            cache_limit_gb: DEFAULT_CACHE_LIMIT_GB,
+            overrides: HashMap::new(),
+        }
+    }
 }
 
 impl Config {
@@ -126,7 +135,7 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = Config::default();
-        assert_eq!(config.cache_limit_gb, 0.0); // serde default doesn't apply to Default trait
+        assert_eq!(config.cache_limit_gb, DEFAULT_CACHE_LIMIT_GB);
         assert!(config.overrides.is_empty());
     }
 

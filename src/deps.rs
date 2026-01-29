@@ -42,6 +42,9 @@ pub enum DepsError {
         to: PathBuf,
         source: std::io::Error,
     },
+
+    #[error("Cache path does not exist: {path}. The cache entry may have been evicted.")]
+    CacheMissing { path: PathBuf },
 }
 
 /// Information about a dependency in .deps/
@@ -87,6 +90,11 @@ fn is_windows() -> bool {
 pub fn link(ecosystem: Ecosystem, package: &str, version: &str) -> Result<PathBuf, DepsError> {
     let cache_path = cache::package_dir(ecosystem, package, version)?;
     let link_path = package_path(ecosystem, package);
+
+    // Verify cache path exists before creating symlink
+    if !cache_path.exists() {
+        return Err(DepsError::CacheMissing { path: cache_path });
+    }
 
     // Ensure parent directories exist
     if let Some(parent) = link_path.parent() {

@@ -41,6 +41,11 @@ pub enum CacheError {
         path: PathBuf,
         source: std::io::Error,
     },
+
+    #[error(
+        "Cache limit ({limit_bytes} bytes) is smaller than the entry ({entry_bytes} bytes). Increase cache_limit_gb or set to 0 for unlimited."
+    )]
+    CacheTooSmall { limit_bytes: u64, entry_bytes: u64 },
 }
 
 /// Information about a cached package for eviction purposes
@@ -138,10 +143,21 @@ pub fn total_size() -> Result<u64, CacheError> {
     Ok(entries.iter().map(|e| e.size).sum())
 }
 
+/// Get the size of a single cache entry
+pub fn entry_size(path: &PathBuf) -> u64 {
+    get_dir_stats(path).0
+}
+
 /// Evict least recently accessed cache entries until under the limit
 ///
+/// If `exclude` is provided, that path will not be evicted (used to protect
+/// a newly added entry from being immediately removed).
+///
 /// Returns the paths of evicted directories.
-pub fn evict_to_limit(limit_bytes: u64) -> Result<Vec<PathBuf>, CacheError> {
+pub fn evict_to_limit(
+    limit_bytes: u64,
+    exclude: Option<&PathBuf>,
+) -> Result<Vec<PathBuf>, CacheError> {
     let mut entries = list_entries()?;
     let mut current_size: u64 = entries.iter().map(|e| e.size).sum();
 
@@ -157,6 +173,13 @@ pub fn evict_to_limit(limit_bytes: u64) -> Result<Vec<PathBuf>, CacheError> {
     for entry in entries {
         if current_size <= limit_bytes {
             break;
+        }
+
+        // Skip the excluded entry (newly added dependency)
+        if let Some(excl) = exclude
+            && &entry.path == excl
+        {
+            continue;
         }
 
         // Delete the directory

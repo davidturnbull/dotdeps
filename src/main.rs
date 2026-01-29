@@ -305,7 +305,7 @@ fn run_add_git_dep(
             }
 
             // Run cache eviction if over limit
-            run_cache_eviction(config, json_output)?;
+            run_cache_eviction(config, &cache_path, json_output)?;
 
             (false, Some(result.cloned_ref))
         }
@@ -394,7 +394,7 @@ fn run_add_registry_dep(
             };
 
             // Run cache eviction if over limit
-            run_cache_eviction(config, json_output)?;
+            run_cache_eviction(config, &cache_path, json_output)?;
 
             (false, Some(result.cloned_ref), warning)
         }
@@ -434,8 +434,13 @@ fn run_add_registry_dep(
 }
 
 /// Run cache eviction if cache exceeds configured limit
+///
+/// `new_entry` is the path to the newly added cache entry, which will be
+/// excluded from eviction. If the new entry alone exceeds the cache limit,
+/// returns an error.
 fn run_cache_eviction(
     config: &config::Config,
+    new_entry: &std::path::PathBuf,
     json_output: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let limit = config.cache_limit_bytes();
@@ -444,7 +449,17 @@ fn run_cache_eviction(
         return Ok(());
     }
 
-    let evicted = cache::evict_to_limit(limit)?;
+    // Check if the new entry alone exceeds the limit
+    let entry_size = cache::entry_size(new_entry);
+    if entry_size > limit {
+        return Err(cache::CacheError::CacheTooSmall {
+            limit_bytes: limit,
+            entry_bytes: entry_size,
+        }
+        .into());
+    }
+
+    let evicted = cache::evict_to_limit(limit, Some(new_entry))?;
 
     if !evicted.is_empty() && !json_output {
         eprintln!(

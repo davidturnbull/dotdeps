@@ -154,6 +154,15 @@ fn normalize_repo_url(url: &str) -> Option<String> {
         url
     };
 
+    // Convert ssh://git@host/path to https://host/path
+    let url = if url.starts_with("ssh://git@") {
+        url.replacen("ssh://git@", "https://", 1)
+    } else if url.starts_with("ssh://") {
+        url.replacen("ssh://", "https://", 1)
+    } else {
+        url
+    };
+
     // Convert git@host:user/repo to https://host/user/repo
     let url = if url.starts_with("git@") {
         let without_prefix = url.strip_prefix("git@").unwrap();
@@ -244,6 +253,23 @@ mod tests {
         assert_eq!(
             normalize_repo_url("git@github.com:lodash/lodash.git"),
             Some("https://github.com/lodash/lodash.git".to_string())
+        );
+    }
+
+    #[test]
+    fn test_normalize_repo_url_git_plus_ssh() {
+        // git+ssh://git@github.com/user/repo.git format (used by glob and others)
+        assert_eq!(
+            normalize_repo_url("git+ssh://git@github.com/isaacs/node-glob.git"),
+            Some("https://github.com/isaacs/node-glob.git".to_string())
+        );
+    }
+
+    #[test]
+    fn test_normalize_repo_url_ssh_protocol() {
+        assert_eq!(
+            normalize_repo_url("ssh://git@github.com/user/repo.git"),
+            Some("https://github.com/user/repo.git".to_string())
         );
     }
 

@@ -2,7 +2,7 @@
 //!
 //! Supports finding package versions and repository URLs from Package.resolved.
 //!
-//! Package.resolved has two versions:
+//! Package.resolved has three versions:
 //!
 //! v1 format (older):
 //! ```json
@@ -30,6 +30,23 @@
 //!   "version": 2
 //! }
 //! ```
+//!
+//! v3 format (Xcode 15.3+ / Swift 5.10+):
+//! ```json
+//! {
+//!   "originHash": "abc123...",
+//!   "pins": [{
+//!     "identity": "package-name",
+//!     "kind": "remoteSourceControl",
+//!     "location": "https://github.com/...",
+//!     "state": { "revision": "...", "version": "1.0.0" }
+//!   }],
+//!   "version": 3
+//! }
+//! ```
+//!
+//! Note: v3 is identical to v2 except for the added `originHash` field at the
+//! top level. The `pins` array structure is unchanged, so v2 parsing works for v3.
 
 use crate::cli::VersionInfo;
 use crate::lockfile::find_nearest_file;
@@ -140,7 +157,7 @@ pub fn list_direct_dependencies(path: &Path) -> Result<Vec<String>, LockfileErro
                 deps.push(pin.package);
             }
         }
-        2 => {
+        2 | 3 => {
             let resolved: PackageResolvedV2 =
                 serde_json::from_str(&content).map_err(|source| LockfileError::ParseFile {
                     path: path.to_path_buf(),
@@ -234,7 +251,7 @@ fn parse_version_from_lockfile(path: &Path, package: &str) -> Result<VersionInfo
                 }
             }
         }
-        2 => {
+        2 | 3 => {
             let resolved: PackageResolvedV2 =
                 serde_json::from_str(&content).map_err(|source| LockfileError::ParseFile {
                     path: path.to_path_buf(),
@@ -289,7 +306,7 @@ fn parse_repo_url_from_lockfile(path: &Path, package: &str) -> Result<String, Lo
                 }
             }
         }
-        2 => {
+        2 | 3 => {
             let resolved: PackageResolvedV2 =
                 serde_json::from_str(&content).map_err(|source| LockfileError::ParseFile {
                     path: path.to_path_buf(),
@@ -587,6 +604,80 @@ mod tests {
     }
   ],
   "version": 2
+}"#;
+        let path = write_temp_file("Package.resolved", content);
+        let deps = list_direct_dependencies(&path).unwrap();
+        assert!(deps.contains(&"swift-argument-parser".to_string()));
+        assert!(!deps.contains(&"local-pkg".to_string()));
+    }
+
+    #[test]
+    fn test_parse_v3_format() {
+        // v3 format introduced in Xcode 15.3 / Swift 5.10
+        // Identical to v2 except for the originHash field
+        let content = r#"{
+  "originHash": "d1f87b2c9e4a5f3c8b7d6e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b",
+  "pins": [
+    {
+      "identity": "swift-argument-parser",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-argument-parser",
+      "state": {
+        "revision": "41982a3656a71c768319979febd796c6fd111d5c",
+        "version": "1.5.0"
+      }
+    },
+    {
+      "identity": "swift-nio",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio.git",
+      "state": {
+        "revision": "abc123def456",
+        "version": "2.58.0"
+      }
+    }
+  ],
+  "version": 3
+}"#;
+
+        // Test that v3 can be parsed as v2 structure (ignoring originHash)
+        let resolved: PackageResolvedV2 = serde_json::from_str(content).unwrap();
+        assert_eq!(resolved.pins.len(), 2);
+        assert_eq!(resolved.pins[0].identity, "swift-argument-parser");
+        assert_eq!(resolved.pins[0].kind, "remoteSourceControl");
+        assert_eq!(resolved.pins[0].state.version, Some("1.5.0".to_string()));
+        assert_eq!(resolved.pins[1].identity, "swift-nio");
+        assert_eq!(resolved.pins[1].state.version, Some("2.58.0".to_string()));
+
+        // Test version check
+        let version_check: VersionCheck = serde_json::from_str(content).unwrap();
+        assert_eq!(version_check.version, 3);
+    }
+
+    #[test]
+    fn test_list_direct_dependencies_v3() {
+        let content = r#"{
+  "originHash": "abc123",
+  "pins": [
+    {
+      "identity": "swift-argument-parser",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-argument-parser",
+      "state": {
+        "revision": "abc",
+        "version": "1.5.0"
+      }
+    },
+    {
+      "identity": "local-pkg",
+      "kind": "localSourceControl",
+      "location": "../local",
+      "state": {
+        "revision": "def"
+      }
+    }
+  ],
+  "version": 3
 }"#;
         let path = write_temp_file("Package.resolved", content);
         let deps = list_direct_dependencies(&path).unwrap();

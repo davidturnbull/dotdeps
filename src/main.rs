@@ -6,6 +6,7 @@ mod deps;
 mod git;
 mod go;
 mod init;
+mod lock;
 mod lockfile;
 mod node;
 mod output;
@@ -280,34 +281,55 @@ fn run_add_git_dep(
     let prefix = if dry_run { "[dry-run] " } else { "" };
     let cache_path = cache::package_dir(ecosystem, package, version)?;
 
-    // Check if already cached
+    // Check if already cached (fast path without locking)
     let (cached, cloned_ref) = if cache::exists(ecosystem, package, version)? {
         if !json_output {
             println!("{}Using cached {} {} (git)", prefix, package, version);
         }
         (true, None)
+    } else if dry_run {
+        // In dry-run mode, skip actual cloning
+        if !json_output {
+            println!("{}Fetching {} {} (git)...", prefix, package, version);
+            println!("{}  cloned at {}", prefix, commit);
+        }
+        (false, Some(commit.to_string()))
     } else {
         if !json_output {
             println!("{}Fetching {} {} (git)...", prefix, package, version);
         }
 
-        if dry_run {
-            // In dry-run mode, skip actual cloning
-            if !json_output {
-                println!("{}  cloned at {}", prefix, commit);
-            }
-            (false, Some(commit.to_string()))
-        } else {
-            // Clone at specific commit
-            let result = git::clone_at_commit(url, commit, &cache_path)?;
-            if !json_output {
-                println!("  cloned at {}", result.cloned_ref);
-            }
+        // Clone atomically with locking to prevent race conditions
+        let url_owned = url.to_string();
+        let commit_owned = commit.to_string();
 
-            // Run cache eviction if over limit
-            run_cache_eviction(config, &cache_path, json_output)?;
+        let populate_result = cache::populate_atomically(
+            ecosystem,
+            package,
+            version,
+            |temp_dir| -> Result<(), git::GitError> {
+                git::clone_at_commit(&url_owned, &commit_owned, temp_dir)?;
+                Ok(())
+            },
+        )?;
 
-            (false, Some(result.cloned_ref))
+        match populate_result {
+            cache::PopulateResult::AlreadyCached => {
+                if !json_output {
+                    println!("  (completed by another process)");
+                }
+                (true, None)
+            }
+            cache::PopulateResult::Populated => {
+                if !json_output {
+                    println!("  cloned at {}", commit);
+                }
+
+                // Run cache eviction if over limit
+                run_cache_eviction(config, &cache_path, json_output)?;
+
+                (false, Some(commit.to_string()))
+            }
         }
     };
 
@@ -353,12 +375,19 @@ fn run_add_registry_dep(
     let prefix = if dry_run { "[dry-run] " } else { "" };
     let cache_path = cache::package_dir(ecosystem, package, version)?;
 
-    // Check if already cached
+    // Check if already cached (fast path without locking)
     let (cached, cloned_ref, warning) = if cache::exists(ecosystem, package, version)? {
         if !json_output {
             println!("{}Using cached {} {}", prefix, package, version);
         }
         (true, None, None)
+    } else if dry_run {
+        // In dry-run mode, skip actual cloning
+        if !json_output {
+            println!("{}Fetching {} {}...", prefix, package, version);
+            println!("{}  cloned at {}", prefix, version);
+        }
+        (false, None, None)
     } else {
         // Detect repository URL (check config override first)
         let repo_url = detect_repo_url(ecosystem, package, config)?;
@@ -367,36 +396,52 @@ fn run_add_registry_dep(
             println!("{}Fetching {} {}...", prefix, package, version);
         }
 
-        if dry_run {
-            // In dry-run mode, skip actual cloning
-            if !json_output {
-                println!("{}  cloned at {}", prefix, version);
+        // Clone atomically with locking to prevent race conditions
+        // We need to capture the clone result, so use a cell
+        let clone_result: std::cell::Cell<Option<git::CloneResult>> = std::cell::Cell::new(None);
+
+        let populate_result = cache::populate_atomically(
+            ecosystem,
+            package,
+            version,
+            |temp_dir| -> Result<(), git::GitError> {
+                let result = git::clone(&repo_url, version, package, temp_dir)?;
+                clone_result.set(Some(result));
+                Ok(())
+            },
+        )?;
+
+        match populate_result {
+            cache::PopulateResult::AlreadyCached => {
+                if !json_output {
+                    println!("  (completed by another process)");
+                }
+                (true, None, None)
             }
-            (false, None, None)
-        } else {
-            // Clone the repository
-            let result = git::clone(&repo_url, version, package, &cache_path)?;
+            cache::PopulateResult::Populated => {
+                let result = clone_result.take().expect("clone_result should be set");
 
-            let warning = if result.used_default_branch {
-                let msg = format!(
-                    "No tag found for version {}, cloned {}",
-                    version, result.cloned_ref
-                );
-                if !json_output {
-                    eprintln!("Warning: {}", msg);
-                }
-                Some(msg)
-            } else {
-                if !json_output {
-                    println!("  cloned at {}", result.cloned_ref);
-                }
-                None
-            };
+                let warning = if result.used_default_branch {
+                    let msg = format!(
+                        "No tag found for version {}, cloned {}",
+                        version, result.cloned_ref
+                    );
+                    if !json_output {
+                        eprintln!("Warning: {}", msg);
+                    }
+                    Some(msg)
+                } else {
+                    if !json_output {
+                        println!("  cloned at {}", result.cloned_ref);
+                    }
+                    None
+                };
 
-            // Run cache eviction if over limit
-            run_cache_eviction(config, &cache_path, json_output)?;
+                // Run cache eviction if over limit
+                run_cache_eviction(config, &cache_path, json_output)?;
 
-            (false, Some(result.cloned_ref), warning)
+                (false, Some(result.cloned_ref), warning)
+            }
         }
     };
 

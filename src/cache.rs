@@ -12,7 +12,8 @@
 //! are removed first.
 
 use crate::cli::Ecosystem;
-use std::path::PathBuf;
+use crate::lock::{self, CacheLock, LockError};
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use thiserror::Error;
 
@@ -46,6 +47,16 @@ pub enum CacheError {
         "Cache limit ({limit_bytes} bytes) is smaller than the entry ({entry_bytes} bytes). Increase cache_limit_gb or set to 0 for unlimited."
     )]
     CacheTooSmall { limit_bytes: u64, entry_bytes: u64 },
+
+    #[error("Failed to acquire cache lock: {0}")]
+    LockFailed(#[from] LockError),
+
+    #[error("Failed to move cache entry from {from} to {to}: {source}")]
+    MoveFailed {
+        from: PathBuf,
+        to: PathBuf,
+        source: std::io::Error,
+    },
 }
 
 /// Information about a cached package for eviction purposes
@@ -122,6 +133,96 @@ pub fn ensure_writable() -> Result<PathBuf, CacheError> {
     }
 
     Ok(base)
+}
+
+/// Result of cache population
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PopulateResult {
+    /// The cache entry already existed (another process completed while we waited)
+    AlreadyCached,
+    /// The cache entry was populated by this call
+    Populated,
+}
+
+/// Populate a cache entry atomically with locking
+///
+/// This function prevents race conditions when multiple processes try to
+/// populate the same cache entry simultaneously:
+///
+/// 1. Acquires an exclusive lock on the cache entry
+/// 2. Double-checks if another process populated it while we waited
+/// 3. Creates a temp directory in the same parent (for atomic rename)
+/// 4. Runs the populate function to fill the temp directory
+/// 5. Atomically renames temp directory to final cache path
+/// 6. Lock is released when the function returns
+///
+/// The `populate_fn` receives the temp directory path and should clone/download
+/// the content there. If it fails, the temp directory is cleaned up automatically.
+pub fn populate_atomically<F, E>(
+    ecosystem: Ecosystem,
+    package: &str,
+    version: &str,
+    populate_fn: F,
+) -> Result<PopulateResult, CacheError>
+where
+    F: FnOnce(&Path) -> Result<(), E>,
+    E: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    let cache_path = package_dir(ecosystem, package, version)?;
+    let lock_path = lock::lock_path_for(&cache_path);
+
+    // Acquire exclusive lock (blocks until available or timeout)
+    let _lock = CacheLock::acquire(&lock_path)?;
+
+    // Double-check: another process may have populated it while we waited
+    if exists(ecosystem, package, version)? {
+        return Ok(PopulateResult::AlreadyCached);
+    }
+
+    // Create temp directory in the same parent for atomic rename
+    // Using the same filesystem ensures rename is atomic
+    let parent = cache_path.parent().ok_or_else(|| CacheError::CreateDir {
+        path: cache_path.clone(),
+        source: std::io::Error::new(std::io::ErrorKind::InvalidInput, "cache path has no parent"),
+    })?;
+
+    std::fs::create_dir_all(parent).map_err(|source| CacheError::CreateDir {
+        path: parent.to_path_buf(),
+        source,
+    })?;
+
+    // Create temp directory with unique name
+    let temp_name = format!(".tmp-{}-{}", version, std::process::id());
+    let temp_path = parent.join(&temp_name);
+
+    // Clean up any leftover temp dir from a previous failed attempt
+    if temp_path.exists() {
+        let _ = std::fs::remove_dir_all(&temp_path);
+    }
+
+    // Run the populate function
+    let result = populate_fn(&temp_path);
+
+    if let Err(e) = result {
+        // Clean up temp directory on failure
+        let _ = std::fs::remove_dir_all(&temp_path);
+        // Convert the error - we can't use ? directly due to type constraints
+        return Err(CacheError::MoveFailed {
+            from: temp_path,
+            to: cache_path,
+            source: std::io::Error::other(e.into().to_string()),
+        });
+    }
+
+    // Atomic rename: temp -> final
+    std::fs::rename(&temp_path, &cache_path).map_err(|source| CacheError::MoveFailed {
+        from: temp_path.clone(),
+        to: cache_path.clone(),
+        source,
+    })?;
+
+    Ok(PopulateResult::Populated)
+    // Lock is released here when _lock is dropped
 }
 
 /// List all cached packages with their size and access time

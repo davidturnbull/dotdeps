@@ -28,13 +28,13 @@ fn main() {
     let dry_run = cli.dry_run;
 
     // Check for updates periodically (skip for update command itself and JSON output)
+    // Capture the message now to avoid blocking on network after command completes
     let is_update_cmd = matches!(cli.command, Some(Command::Update { .. }));
-    if !is_update_cmd
-        && !json_output
-        && let Some(msg) = update::maybe_notify_update()
-    {
-        eprintln!("{}\n", msg);
-    }
+    let update_msg = if !is_update_cmd && !json_output {
+        update::maybe_notify_update()
+    } else {
+        None
+    };
 
     let result = match cli.command {
         Some(Command::Init {
@@ -56,6 +56,11 @@ fn main() {
     if let Err(e) = result {
         eprintln!("Error: {}", e);
         std::process::exit(1);
+    }
+
+    // Only show update notification after successful command
+    if let Some(msg) = update_msg {
+        eprintln!("\n{}", msg);
     }
 }
 

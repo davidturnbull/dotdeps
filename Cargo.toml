@@ -17,7 +17,11 @@ thiserror = "2"
 toml = "0.8"
 ureq = "3"
 fs2 = "0.4"
-self_update = { version = "0.42", default-features = false, features = ["archive-tar", "archive-zip", "compression-flate2", "rustls"] }
+tar = "0.4"
+xz2 = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+zip = "0.6"
 
 # The profile that 'dist' will build with
 [profile.dist]

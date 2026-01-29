@@ -720,14 +720,14 @@ fn run_update(check_only: bool, json_output: bool) -> Result<(), Box<dyn std::er
         let status = update::run_update(!json_output)?;
 
         match status {
-            self_update::Status::UpToDate(v) => {
+            update::UpdateStatus::UpToDate(v) => {
                 if json_output {
                     output::print_json(&UpdateOutput::up_to_date(&v));
                 } else {
                     println!("dotdeps {} is already up to date.", v);
                 }
             }
-            self_update::Status::Updated(v) => {
+            update::UpdateStatus::Updated(v) => {
                 if json_output {
                     output::print_json(&UpdateOutput::updated(current_version, &v));
                 } else {

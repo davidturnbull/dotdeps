@@ -91,6 +91,9 @@ pub fn link(ecosystem: Ecosystem, package: &str, version: &str) -> Result<PathBu
     let cache_path = cache::package_dir(ecosystem, package, version)?;
     let link_path = package_path(ecosystem, package);
 
+    // Track if .deps/ existed before we create directories
+    let deps_existed = deps_dir().exists();
+
     // Verify cache path exists before creating symlink
     if !cache_path.exists() {
         return Err(DepsError::CacheMissing { path: cache_path });
@@ -102,6 +105,12 @@ pub fn link(ecosystem: Ecosystem, package: &str, version: &str) -> Result<PathBu
             path: parent.to_path_buf(),
             source,
         })?;
+    }
+
+    // If we just created .deps/ for the first time, update .gitignore
+    if !deps_existed {
+        // Ignore errors - gitignore update is best-effort
+        let _ = crate::init::init_gitignore(false);
     }
 
     // Remove existing link/directory if present

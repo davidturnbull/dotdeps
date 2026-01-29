@@ -39,8 +39,9 @@ pub struct InitConfig {
     pub dry_run: bool,
 }
 
-/// Result of an individual init action
+/// Result of an individual init action (public for use by deps module)
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ActionResult {
     /// Action was performed successfully
     Created(String),
@@ -113,7 +114,7 @@ fn init_deps_dir(dry_run: bool) -> Result<ActionResult, io::Error> {
 }
 
 /// Add .deps/ to .gitignore if not already present
-fn init_gitignore(dry_run: bool) -> Result<ActionResult, io::Error> {
+pub fn init_gitignore(dry_run: bool) -> Result<ActionResult, io::Error> {
     let gitignore_path = Path::new(".gitignore");
 
     // Read existing content or start fresh

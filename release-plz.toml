@@ -1,3 +1,5 @@
 [workspace]
 # Use git tags to determine versions instead of crates.io registry
 git_only = true
+# Don't publish to crates.io
+publish = false

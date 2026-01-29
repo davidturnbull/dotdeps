@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/davidturnbull/dotdeps/compare/v0.1.2...v0.1.3) - 2026-01-29
+
+### Added
+
+- *(swift)* add Package.resolved v3 format support
+- *(cache)* add atomic cache population with file locking
+- *(context)* add JSON output support for context command
+- *(update)* authenticate GitHub API requests with token
+
+### Fixed
+
+- *(cache)* protect newly added entries from immediate eviction
+- *(cli)* report when remove/clean targets don't exist
+- *(cli)* show update notification after command completes
+- *(config)* use correct default values in Config::default()
+
+### Other
+
+- *(readme)* clarify init output and add lockfile discovery section
+
 ## [0.1.2](https://github.com/davidturnbull/dotdeps/compare/v0.1.1...v0.1.2) - 2026-01-29
 
 ### Fixed

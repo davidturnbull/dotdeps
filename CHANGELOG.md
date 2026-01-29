@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/davidturnbull/dotdeps/compare/v0.1.0...v0.1.1) - 2026-01-29
+
+### Added
+
+- *(update)* add self-update command for automatic updates
+- *(init)* add init command for project setup
+
+### Fixed
+
+- *(ci)* use git_only mode for release-plz
+
+### Other
+
+- *(readme)* document update command usage
+- *(context)* improve instruction text clarity and formatting
+- release v0.1.0
+- update README
+- configure release-plz to skip crates.io publish
+- skip e2e tests that require external tools
+
 ## [0.1.0](https://github.com/davidturnbull/dotdeps/releases/tag/v0.1.0) - 2026-01-26
 
 ### Added

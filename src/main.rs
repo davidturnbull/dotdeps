@@ -44,7 +44,7 @@ fn main() {
         Some(Command::Add { spec }) => run_add(spec, json_output, dry_run),
         Some(Command::Remove { spec }) => run_remove(spec, json_output, dry_run),
         Some(Command::List) => run_list(json_output),
-        Some(Command::Context) => run_context(),
+        Some(Command::Context) => run_context(json_output),
         Some(Command::Clean) => run_clean(json_output, dry_run),
         Some(Command::Update { check }) => run_update(check, json_output),
         None => {
@@ -621,8 +621,11 @@ fn run_clean(json_output: bool, dry_run: bool) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-fn run_context() -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(output) = context::render_context()? {
+fn run_context(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let context = context::render_context()?;
+    if json_output {
+        output::print_json(&output::ContextResult { context });
+    } else if let Some(output) = context {
         print!("{}", output);
     }
     Ok(())

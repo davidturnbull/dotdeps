@@ -56,6 +56,13 @@ pub struct CleanResult {
     pub dry_run: bool,
 }
 
+/// Result of a context operation
+#[derive(Debug, Serialize)]
+pub struct ContextResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context: Option<String>,
+}
+
 /// Result of skipping a local dependency
 #[derive(Debug, Serialize)]
 pub struct SkipResult {
